@@ -30,7 +30,8 @@ const calculateChange = (current, previous) => {
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [stats, setStats] = React.useState({
+
+  const [stats, setStats] = useState({
     patients: 0,
     patientsChange: 0,
     tests: 0,
@@ -41,26 +42,26 @@ const Dashboard = () => {
 
   const [cases, setCases] = useState([]);
   const [filter, setFilter] = useState("1d");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const userName = localStorage.getItem("userName") || sessionStorage.getItem("userName") || "";
+  const userName =
+    localStorage.getItem("userName") || sessionStorage.getItem("userName") || "";
 
   useEffect(() => {
     async function fetchData() {
-      // Fetch current and previous month patient data from backend
-
       const patientsResp = await fetch("http://localhost:5000/patients");
       const patientsData = await patientsResp.json();
       const patientsList = patientsData.patients || patientsData || [];
 
-      // Number of patients
       const numPatients = patientsList.length;
 
       const numTests = patientsList.reduce(
-        (sum, p) => sum + p.tests.reduce((groupSum, group) => groupSum + (group.testItems?.length || 0), 0),
+        (sum, p) =>
+          sum +
+          p.tests.reduce((groupSum, group) => groupSum + (group.testItems?.length || 0), 0),
         0
       );
 
-      // Total revenue
       const revenue = patientsList.reduce(
         (sum, p) => sum + (Number(p.totalBill) || 0),
         0
@@ -83,21 +84,14 @@ const Dashboard = () => {
       const currCosts = currentCostsData.totalCost || 0;
       const prevCosts = previousCostsData.totalCost || 0;
 
-
-      // Extract patient lists
       const currPatientsList =
         currentPatientsData.patients || currentPatientsData || [];
       const prevPatientsList =
         previousPatientsData.patients || previousPatientsData || [];
 
-      // Counts
       const numCurrPatients = currPatientsList.length;
       const numPrevPatients = prevPatientsList.length;
 
-      console.log("Current Patients:", numCurrPatients);
-      console.log("Previous Patients:", numPrevPatients);
-
-      // Tests counts
       const numCurrTests = currPatientsList.reduce((sum, patient) => {
         if (!patient.tests) return sum;
         return sum + patient.tests.reduce((groupSum, group) => groupSum + (group.testItems?.length || 0), 0);
@@ -108,7 +102,6 @@ const Dashboard = () => {
         return sum + patient.tests.reduce((groupSum, group) => groupSum + (group.testItems?.length || 0), 0);
       }, 0);
 
-      // Revenue sums
       const currRevenue = currPatientsList.reduce(
         (sum, p) => sum + (Number(p.totalBill) || 0),
         0
@@ -121,12 +114,10 @@ const Dashboard = () => {
       const currTotalRevenue = currRevenue - currCosts;
       const prevTotalRevenue = prevRevenue - prevCosts;
 
-
       let costs = 0;
       try {
         const inventoryResp = await fetch("http://localhost:5000/inventory");
         const inventoryData = await inventoryResp.json();
-        // aggregate costs from inventory, e.g., sum up amount for batches used so far.
         costs = (inventoryData.inventory || []).reduce((sum, item) => {
           return (
             sum +
@@ -136,20 +127,15 @@ const Dashboard = () => {
           );
         }, 0);
       } catch {
-        costs = 0; // fallback
+        costs = 0;
       }
 
-      console.log(numCurrPatients, numPrevPatients);
-      console.log(numCurrTests, numPrevTests);
-      console.log(currTotalRevenue, prevTotalRevenue);
-      // Calculate percentage changes
       const patientsChange = calculateChange(numCurrPatients, numPrevPatients);
       const testsChange = calculateChange(numCurrTests, numPrevTests);
       const revenueChange = calculateChange(currTotalRevenue, prevTotalRevenue);
 
       const totalRevenue = revenue === 0 ? 0 : revenue - costs;
 
-      // Update stats
       setStats({
         patients: numPatients,
         patientsChange,
@@ -159,14 +145,12 @@ const Dashboard = () => {
         revenueChange,
       });
 
-      // Set all current patients data for recent cases table
       setCases(patientsList);
     }
 
     fetchData();
   }, []);
 
-  // Filter cases by time range
   const filteredCases = React.useMemo(() => {
     if (filter === "all") return cases;
     const startDate = getStartDate(filter);
@@ -188,14 +172,33 @@ const Dashboard = () => {
       }}
     >
       {/* Sidebar */}
-      <Sidebar />
+      <div
+        className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-[var(--border-color)] shadow-lg h-screen flex flex-col transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <Sidebar />
+      </div>
 
-      {/* Main Content */}
-      <main className="flex-1 p-6 lg:p-8">
+      {/* Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black opacity-50 z-30 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Main content */}
+      <main className="flex-1 p-6 lg:p-8 lg:ml-28" aria-label="Main content area">
         <header className="flex items-center justify-between mb-8">
-          <button className="md:hidden p-2 -ml-2" aria-label="Open menu">
+          <button
+            className="md:hidden p-2 -ml-2 text-[var(--text-primary)]"
+            aria-label="Toggle sidebar"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
             <svg
-              className="h-6 w-6 text-[var(--text-primary)]"
+              className="h-6 w-6"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -205,15 +208,16 @@ const Dashboard = () => {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
-              ></path>
+              />
             </svg>
           </button>
+
           <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">
             Dashboard
           </h1>
+
           <div className="flex items-center gap-4">
             <div className="relative group flex items-center">
-              {/* Profile Icon */}
               <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center cursor-pointer">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -231,9 +235,10 @@ const Dashboard = () => {
                   />
                 </svg>
               </span>
-              {/* Tooltip */}
-              <div className="absolute right-full mr-2 bottom-1/2 translate-y-1/2 bg-gray-800 text-white text-xs rounded-md px-3 py-2 whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity shadow-lg z-50"
-                style={{ minWidth: "5rem" }}>
+              <div
+                className="absolute right-full mr-2 bottom-1/2 translate-y-1/2 bg-gray-800 text-white text-xs rounded-md px-3 py-2 whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity shadow-lg z-50"
+                style={{ minWidth: "5rem" }}
+              >
                 {userName || "No Name"}
               </div>
             </div>
@@ -274,7 +279,6 @@ const Dashboard = () => {
             </p>
           </div>
 
-          {/* Tests Conducted */}
           <div className="card bg-white p-6 rounded-lg shadow-sm border border-[var(--border-color)]">
             <p className="text-[var(--text-secondary)] text-sm font-medium">
               Tests Conducted
@@ -307,7 +311,6 @@ const Dashboard = () => {
             </p>
           </div>
 
-          {/* Revenue */}
           <div className="card bg-white p-6 rounded-lg shadow-sm border border-[var(--border-color)]">
             <p className="text-[var(--text-secondary)] text-sm font-medium">
               Revenue
@@ -367,88 +370,117 @@ const Dashboard = () => {
           </div>
         </div>
         <div className="bg-white rounded-lg shadow-sm border border-[var(--border-color)] overflow-x-auto">
-          <table className="w-full text-sm text-left text-[var(--text-secondary)]">
-            <thead className="table-header bg-gray-50 text-xs text-[var(--text-primary)] uppercase">
-              <tr>
-                <th className="px-6 py-3">Case ID</th>
-                <th className="px-6 py-3">Patient Name</th>
-                <th className="px-6 py-3">Date</th>
-                <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3">
-                  <span className="sr-only">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredCases.length === 0 ? (
-                <tr>
-                  <td className="px-6 py-4" colSpan={5}>
-                    No cases found.
-                  </td>
-                </tr>
-              ) : (
-                filteredCases.map(({ patientId, name, date, tests }) => {
-                  // pick highest-priority status among tests
-                  let allTestItems = [];
-                  if (Array.isArray(tests)) {
-                    tests.forEach(group => {
-                      if (Array.isArray(group.testItems)) {
-                        allTestItems = allTestItems.concat(group.testItems);
-                      }
-                    });
+  <table className="w-full text-sm text-left text-[var(--text-secondary)] table-fixed overflow-x-auto">
+    <colgroup>
+      <col style={{ width: "20%" }} />
+      <col style={{ width: "20%" }} />
+      <col style={{ width: "20%" }} />
+      <col style={{ width: "20%" }} />
+      <col style={{ width: "20%" }} />
+    </colgroup>
+    <thead className="table-header bg-gray-50 text-xs text-[var(--text-primary)] uppercase">
+      <tr>
+        <th className="px-6 py-3">Case ID</th>
+        <th className="px-6 py-3">Patient Name</th>
+        <th className="px-6 py-3">Date</th>
+        <th className="px-6 py-3">Status</th>
+        <th className="px-6 py-3">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {filteredCases.length === 0 ? (
+        <tr>
+          <td className="px-6 py-4 text-center" colSpan={5}>
+            No cases found.
+          </td>
+        </tr>
+      ) : (
+        filteredCases.map(({ patientId, name, date, tests }) => {
+          let allTestItems = [];
+          if (Array.isArray(tests)) {
+            tests.forEach((group) => {
+              if (Array.isArray(group.testItems)) {
+                allTestItems = allTestItems.concat(group.testItems);
+              }
+            });
+          }
+          let status = "Completed";
+          if (
+            !allTestItems.length ||
+            allTestItems.some(
+              (t) => t.status === "Pending" || t.status === "In Progress"
+            )
+          ) {
+            status = "Pending";
+          }
+          const statusClass =
+            status === "Completed"
+              ? "bg-teal-100 text-teal-800"
+              : status === "Pending"
+              ? "bg-amber-100 text-amber-800"
+              : "bg-gray-200 text-gray-800";
+          return (
+            <tr
+              key={patientId}
+              className="bg-white border-b border-[var(--border-color)] hover:bg-gray-50"
+            >
+              <td className="px-6 py-4 max-w-0 whitespace-nowrap relative group">
+                <div className="truncate cursor-default">{patientId}</div>
+                <div
+                  className="absolute left-1/2 top-1/2 hidden max-w-xs -translate-x-1/2 -translate-y-full whitespace-normal rounded bg-gray-800 p-2 text-sm text-white shadow-lg group-hover:block z-50 pointer-events-none"
+                  style={{ whiteSpace: "normal" }}
+                >
+                  {patientId}
+                </div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap max-w-0 relative group">
+                <div className="truncate cursor-default">{name}</div>
+                <div
+                  className="absolute left-1/2 top-1/2 hidden max-w-xs -translate-x-1/2 -translate-y-full whitespace-normal rounded bg-gray-800 p-2 text-sm text-white shadow-lg group-hover:block z-50 pointer-events-none"
+                  style={{ whiteSpace: "normal" }}
+                >
+                  {name}
+                </div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap max-w-0 relative group">
+                <div className="truncate cursor-default">{date}</div>
+                <div
+                  className="absolute left-1/2 top-1/2 hidden max-w-xs -translate-x-1/2 -translate-y-full whitespace-normal rounded bg-gray-800 p-2 text-sm text-white shadow-lg group-hover:block z-50 pointer-events-none"
+                  style={{ whiteSpace: "normal" }}
+                >
+                  {date}
+                </div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <span
+                  className={`inline-flex items-center justify-center rounded-full h-6 px-3 text-xs font-medium ${statusClass}`}
+                >
+                  {status}
+                </span>
+              </td>
+              <td className="px-6 py-4 whitespace-normal max-w-0 truncate">
+                <button
+                  onClick={() =>
+                    navigate("/patients", {
+                      state: { patientId, fromDashboard: true },
+                    })
                   }
-                  let status = "Completed";
-                  if (
-                    !allTestItems.length ||
-                    allTestItems.some(t => t.status === "Pending" || t.status === "In Progress")
-                  ) {
-                    status = "Pending";
-                  }
-                  const statusClass =
-                    status === "Completed"
-                      ? "bg-teal-100 text-teal-800"
-                      : status === "Pending"
-                      ? "bg-amber-100 text-amber-800"
-                      : "bg-gray-200 text-gray-800";
-                  return (
-                    <tr
-                      key={patientId}
-                      className="bg-white border-b border-[var(--border-color)] hover:bg-gray-50"
-                    >
-                      <td className="px-6 py-4 font-medium text-[var(--text-primary)] whitespace-nowrap">
-                        {patientId}
-                      </td>
-                      <td className="px-6 py-4">{name}</td>
-                      <td className="px-6 py-4">{date}</td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center justify-center rounded-full h-6 px-3 text-xs font-medium ${statusClass}`}
-                        >
-                          {status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() =>
-                            navigate("/patients", {
-                              state: { patientId, fromDashboard: true }, // pass patientId and flag
-                            })
-                          }
-                          className="font-medium text-[var(--primary-color)] hover:underline cursor-pointer bg-transparent border-none p-0"
-                        >
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                  className="font-medium text-[var(--primary-color)] hover:underline cursor-pointer bg-transparent border-none p-0"
+                >
+                  View
+                </button>
+              </td>
+            </tr>
+          );
+        })
+      )}
+    </tbody>
+  </table>
+</div>
       </main>
     </div>
   );
 };
 
 export default Dashboard;
+

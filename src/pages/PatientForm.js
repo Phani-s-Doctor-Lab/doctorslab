@@ -9,6 +9,7 @@ const getCurrentDate = () => {
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
+
 const getCurrentTime = () => {
   const date = new Date();
   const hours = String(date.getHours()).padStart(2, '0');
@@ -28,9 +29,28 @@ const defaultFormData = {
   discount: 0,
 };
 
+// Loading Spinner Component
+const LoadingSpinner = ({ size = "w-6 h-6", className = "" }) => (
+  <div className={`${size} ${className}`}>
+    <div className="animate-spin rounded-full border-2 border-gray-300 border-t-[var(--brand-color)]"></div>
+  </div>
+);
+
+// Hamburger Icon Component
+const HamburgerIcon = ({ isOpen }) => (
+  <div className="flex flex-col justify-center items-center w-6 h-6 cursor-pointer">
+    <span className={`block h-0.5 w-6 bg-[var(--text-primary)] transform transition duration-300 ease-in-out ${isOpen ? 'rotate-45 translate-y-1.5' : ''}`} />
+    <span className={`block h-0.5 w-6 bg-[var(--text-primary)] transform transition duration-300 ease-in-out mt-1 ${isOpen ? 'opacity-0' : ''}`} />
+    <span className={`block h-0.5 w-6 bg-[var(--text-primary)] transform transition duration-300 ease-in-out mt-1 ${isOpen ? '-rotate-45 -translate-y-1.5' : ''}`} />
+  </div>
+);
+
 const PatientForm = () => {
+  // Mock navigation functions
+
   const navigate = useNavigate();
   const location = useLocation();
+  // Mock location state (normally from react-router)
 
   // Initialize state from location.state if present (rehydration)
   const [formData, setFormData] = useState(location.state?.formData || defaultFormData);
@@ -45,6 +65,19 @@ const PatientForm = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [amountPaid, setAmountPaid] = useState(0);
   const [paymentMode, setPaymentMode] = useState("UPI");
+
+  // New state for responsive design and loading
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isLoadingTests, setIsLoadingTests] = useState(false);
+  const [isLoadingDoctors, setIsLoadingDoctors] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Mock API calls with loading states
+    useEffect(() => {
+    fetch("http://localhost:5000/doctors")
+      .then(res => res.json())
+      .then(data => setDoctorOptions(data.doctors || []));
+  }, []);
 
   useEffect(() => {
     fetch("http://localhost:5000/doctors")
@@ -118,6 +151,13 @@ const PatientForm = () => {
     setTotal(totalPrice - discountValue);
   }, [selectedTests, formData.discount]);
 
+  // Recalculate total whenever tests or discount changes
+  useEffect(() => {
+    const totalPrice = selectedTests.reduce((sum, t) => sum + Number(t.price), 0);
+    const discountValue = Number(formData.discount) || 0;
+    setTotal(totalPrice - discountValue);
+  }, [selectedTests, formData.discount]);
+
   // Handle input change
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -149,7 +189,7 @@ const PatientForm = () => {
     handleChange("doctor", doctorSearchInput);
   };
 
-  // Handle test selection toggle
+  
   const getTestId = (test) => test.id || test._id || test.testId;
 
   const handleTestToggle = (test) => {
@@ -216,19 +256,10 @@ const PatientForm = () => {
     }
   };
 
-  function formatDateLocal(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // month is 0-based
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
-
-  function formatTimeLocal(date) {
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    console.log(`${hours}:${minutes}`);
-    return `${hours}:${minutes}`;
-  }
+  // Close sidebar when clicking outside on mobile
+  const handleOverlayClick = () => {
+    setSidebarOpen(false);
+  };
 
   return (
     <div
@@ -243,10 +274,19 @@ const PatientForm = () => {
         fontFamily: '"Public Sans", sans-serif',
       }}
     >
-      <header className="sticky top-0 z-10 flex items-center justify-between whitespace-nowrap border-b border-solid border-[var(--border-color)] bg-[var(--surface-color)] px-10 py-3 shadow-sm">
+      <header className="sticky top-0 z-10 flex items-center justify-between whitespace-nowrap border-b border-solid border-[var(--border-color)] bg-[var(--surface-color)] px-4 py-3 shadow-sm lg:px-10">
         <div className="flex items-center gap-4">
+          {/* Hamburger Menu Button - Only visible on mobile */}
+          <button
+            className="lg:hidden p-2 rounded-md hover:bg-gray-100"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            aria-label="Toggle sidebar"
+          >
+            <HamburgerIcon isOpen={sidebarOpen} />
+          </button>
+
           <svg
-            className="h-8 w-8 text-[var(--brand-color)]"
+            className="h-6 w-6 sm:h-8 sm:w-8 text-[var(--brand-color)]"
             fill="none"
             viewBox="0 0 48 48"
           >
@@ -268,25 +308,41 @@ const PatientForm = () => {
               </clipPath>
             </defs>
           </svg>
-          <h1 className="text-xl font-bold">Pathology Services</h1>
+          <h1 className="text-lg sm:text-xl font-bold truncate">Pathology Services</h1>
         </div>
       </header>
 
-      <div className="relative flex flex-col min-h-screen md:flex-row">
-        <Sidebar />
-        <main className="flex-1 px-4 py-8 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl rounded-lg bg-[var(--surface-color)] p-6 shadow-lg text-left">
-            <h2 className="mb-6 text-3xl font-bold tracking-tight">
+      <div className="relative flex flex-col min-h-screen lg:flex-row">
+        {/* Sidebar overlay for mobile */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
+            onClick={handleOverlayClick}
+          />
+        )}
+
+        {/* Sidebar */}
+        <div className={`
+          fixed inset-y-0 left-0 z-30 w-64 transform transition-transform duration-300 ease-in-out
+          lg:relative lg:translate-x-0 lg:z-auto
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}>
+          <Sidebar />
+        </div>
+
+        <main className="flex-1 px-4 py-4 sm:px-6 lg:px-8 sm:py-8">
+          <div className="mx-auto max-w-7xl rounded-lg bg-[var(--surface-color)] p-4 sm:p-6 shadow-lg text-left">
+            <h2 className="mb-4 sm:mb-6 text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight">
               Patient Information and Test Selection
             </h2>
             <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
                 <div>
                   <label className="block font-medium text-[var(--text-primary)]" htmlFor="name">
                     Name
                   </label>
                   <input
-                    className="mt-1 block w-full rounded-md border p-3 border-[var(--border-color)] shadow-sm focus:border-[var(--brand-color)] focus:ring-[var(--brand-color)]"
+                    className="mt-1 block w-full rounded-md border p-2 sm:p-3 border-[var(--border-color)] shadow-sm focus:border-[var(--brand-color)] focus:ring-[var(--brand-color)] text-sm sm:text-base"
                     id="name"
                     value={formData.name}
                     onChange={(e) => handleChange("name", e.target.value)}
@@ -300,7 +356,7 @@ const PatientForm = () => {
                     Age
                   </label>
                   <input
-                    className="mt-1 block w-full rounded-md border p-3 border-[var(--border-color)] shadow-sm focus:border-[var(--brand-color)] focus:ring-[var(--brand-color)]"
+                    className="mt-1 block w-full rounded-md border p-2 sm:p-3 border-[var(--border-color)] shadow-sm focus:border-[var(--brand-color)] focus:ring-[var(--brand-color)] text-sm sm:text-base"
                     id="age"
                     placeholder="Enter patient's age"
                     required
@@ -314,7 +370,7 @@ const PatientForm = () => {
                     Gender
                   </label>
                   <select
-                    className="mt-1 block w-full rounded-md border p-3 border-[var(--border-color)] shadow-sm focus:border-[var(--brand-color)] focus:ring-[var(--brand-color)]"
+                    className="mt-1 block w-full rounded-md border p-2 sm:p-3 border-[var(--border-color)] shadow-sm focus:border-[var(--brand-color)] focus:ring-[var(--brand-color)] text-sm sm:text-base"
                     id="gender"
                     required
                     value={formData.gender}
@@ -331,7 +387,7 @@ const PatientForm = () => {
                     Address
                   </label>
                   <input
-                    className="mt-1 block w-full rounded-md border p-3 border-[var(--border-color)] shadow-sm focus:border-[var(--brand-color)] focus:ring-[var(--brand-color)]"
+                    className="mt-1 block w-full rounded-md border p-2 sm:p-3 border-[var(--border-color)] shadow-sm focus:border-[var(--brand-color)] focus:ring-[var(--brand-color)] text-sm sm:text-base"
                     id="address"
                     value={formData.address}
                     onChange={(e) => handleChange("address", e.target.value)}
@@ -344,7 +400,7 @@ const PatientForm = () => {
                     Contact Number
                   </label>
                   <input
-                    className="mt-1 block w-full rounded-md border p-3 border-[var(--border-color)] shadow-sm focus:border-[var(--brand-color)] focus:ring-[var(--brand-color)]"
+                    className="mt-1 block w-full rounded-md border p-2 sm:p-3 border-[var(--border-color)] shadow-sm focus:border-[var(--brand-color)] focus:ring-[var(--brand-color)] text-sm sm:text-base"
                     id="contact"
                     placeholder="Enter patient's contact number"
                     required
@@ -358,17 +414,24 @@ const PatientForm = () => {
                   <label className="block font-medium text-[var(--text-primary)]" htmlFor="doctor">
                     Referred Doctor
                   </label>
-                  <input
-                    className="mt-1 block w-full rounded-md border p-3 border-[var(--border-color)] shadow-sm focus:border-[var(--brand-color)] focus:ring-[var(--brand-color)]"
-                    id="doctor"
-                    placeholder="Select or enter referring doctor's name"
-                    value={doctorSearchInput}
-                    onChange={e => onDoctorInputChange(e.target.value)}
-                    list="doctor-list"
-                    onBlur={handleDoctorBlurOrSelect}
-                    required
-                    type="text"
-                  />
+                  <div className="relative">
+                    <input
+                      className="mt-1 block w-full rounded-md border p-2 sm:p-3 border-[var(--border-color)] shadow-sm focus:border-[var(--brand-color)] focus:ring-[var(--brand-color)] text-sm sm:text-base pr-8"
+                      id="doctor"
+                      placeholder="Select or enter referring doctor's name"
+                      value={doctorSearchInput}
+                      onChange={e => onDoctorInputChange(e.target.value)}
+                      list="doctor-list"
+                      onBlur={handleDoctorBlurOrSelect}
+                      required
+                      type="text"
+                    />
+                    {isLoadingDoctors && (
+                      <div className="absolute right-2 top-1/2 transform -translate-y-1/2 mt-0.5">
+                        <LoadingSpinner size="w-4 h-4" />
+                      </div>
+                    )}
+                  </div>
                   <datalist id="doctor-list">
                     {doctorOptions.map(doc => (
                       <option key={doc.id} value={doc.name} />
@@ -377,40 +440,86 @@ const PatientForm = () => {
                 </div>
               </div>
 
-              <div className="mt-10">
-                <h3 className="mb-4 text-xl font-bold">Select Tests</h3>
-                <div className="w-full overflow-x-auto rounded-lg border border-[var(--border-color)]">
+              <div className="mt-6 sm:mt-10">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg sm:text-xl font-bold">Select Tests</h3>
+                  {isLoadingTests && <LoadingSpinner />}
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="block sm:hidden space-y-4">
+                  {isLoadingTests ? (
+                    <div className="flex justify-center py-8">
+                      <LoadingSpinner size="w-8 h-8" />
+                    </div>
+                  ) : tests.length > 0 ? (
+                    tests.map((test, idx) => (
+                      <div key={idx} className="border border-[var(--border-color)] rounded-lg p-4 bg-[var(--surface-color)]">
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="font-medium text-[var(--text-primary)] text-sm leading-tight">
+                            {test.testName}
+                          </h4>
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 ml-2 rounded border-gray-300 text-[var(--brand-color)] focus:ring-[var(--brand-color)] flex-shrink-0"
+                            checked={selectedTests.some((t) => getTestId(t) === getTestId(test))}
+                            onChange={() => handleTestToggle(test)}
+                          />
+                        </div>
+                        <p className="text-sm text-[var(--text-secondary)] mb-2">
+                          {test.description || "No description available"}
+                        </p>
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">
+                          {test.price ? `₹${test.price}` : "Price not available"}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-[var(--text-secondary)]">
+                      No tests available
+                    </div>
+                  )}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden sm:block w-full overflow-x-auto rounded-lg border border-[var(--border-color)]">
                   <table className="w-full divide-y divide-[var(--border-color)]">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="w-2/5 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+                        <th className="w-2/5 px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
                           Test Name
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
                           Description
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
                           Price
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
                           Select
                         </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[var(--border-color)] bg-[var(--surface-color)]">
-                      {tests.length > 0 ? (
+                      {isLoadingTests ? (
+                        <tr>
+                          <td colSpan="4" className="px-4 lg:px-6 py-8 text-center">
+                            <LoadingSpinner size="w-8 h-8" className="mx-auto" />
+                          </td>
+                        </tr>
+                      ) : tests.length > 0 ? (
                         tests.map((test, idx) => (
                           <tr key={idx}>
-                            <td className="px-6 py-4 text-sm font-medium text-[var(--text-primary)] whitespace-normal break-words max-w-xs">
+                            <td className="px-4 lg:px-6 py-4 text-sm font-medium text-[var(--text-primary)] whitespace-normal break-words max-w-xs">
                               {test.testName}
                             </td>
-                            <td className="px-6 py-4 text-sm text-[var(--text-secondary)] whitespace-normal break-words max-w-sm">
+                            <td className="px-4 lg:px-6 py-4 text-sm text-[var(--text-secondary)] whitespace-normal break-words max-w-sm">
                               {test.description || "--"}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">
+                            <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">
                               {test.price ? `₹${test.price}` : "--"}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm">
                               <input
                                 type="checkbox"
                                 className="h-4 w-4 rounded border-gray-300 text-[var(--brand-color)] focus:ring-[var(--brand-color)]"
@@ -422,7 +531,7 @@ const PatientForm = () => {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan="4" className="px-6 py-4 text-sm text-center text-[var(--text-secondary)]">
+                          <td colSpan="4" className="px-4 lg:px-6 py-4 text-sm text-center text-[var(--text-secondary)]">
                             No tests available
                           </td>
                         </tr>
@@ -430,31 +539,43 @@ const PatientForm = () => {
                     </tbody>
                   </table>
                 </div>
+
                 <div className="mt-4 flex justify-end">
                   <button
                     type="button"
                     onClick={handleAddTestClick}
-                    className="flex items-center gap-2 rounded-md border border-[var(--border-color)] bg-[var(--background-color)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--border-color)]"
+                    className="flex items-center gap-2 rounded-md border border-[var(--border-color)] bg-[var(--background-color)] px-3 sm:px-4 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--border-color)] transition-colors"
                   >
-                    <span className="material-icons text-base">Add Test</span>
+                    <span className="text-sm sm:text-base">Add Test</span>
                   </button>
                 </div>
               </div>
-              <div className="mt-8 flex justify-end items-center gap-6 border-t border-[var(--border-color)] pt-6">
-                <p className="text-lg font-bold">Total Bill: ₹{total}</p>
+
+              <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-t border-[var(--border-color)] pt-4 sm:pt-6">
+                <p className="text-lg sm:text-xl font-bold">Total Bill: ₹{total}</p>
                 <button
-                  className="rounded-md bg-[var(--brand-color)] px-6 py-3 text-base font-bold text-white shadow-sm transition-colors hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color)] focus:ring-offset-2"
+                  className="w-full sm:w-auto rounded-md bg-[var(--brand-color)] px-6 py-3 text-base font-bold text-white shadow-sm transition-colors hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color)] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   type="submit"
+                  disabled={isSubmitting}
                 >
-                  Submit
+                  {isSubmitting ? (
+                    <>
+                      <LoadingSpinner size="w-4 h-4" />
+                      Submitting...
+                    </>
+                  ) : (
+                    "Submit"
+                  )}
                 </button>
               </div>
             </form>
           </div>
         </main>
+
+        {/* Discount Modal */}
         {showDiscountModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-            <div className="bg-white rounded p-6 w-80 shadow-lg">
+          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
               <h2 className="mb-4 text-lg font-bold">Enter Discount</h2>
               <input
                 type="number"
@@ -462,13 +583,13 @@ const PatientForm = () => {
                 max={selectedTests.reduce((sum, t) => sum + Number(t.price), 0)}
                 value={formData.discount}
                 onChange={e => handleChange("discount", e.target.value)}
-                required
-                className="w-full mb-4 rounded border p-2"
+                placeholder="Enter discount amount"
+                className="w-full mb-4 rounded border p-3 border-[var(--border-color)] focus:border-[var(--brand-color)] focus:ring-[var(--brand-color)]"
               />
-              <div className="flex justify-end gap-4">
+              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-4">
                 <button
                   onClick={() => setShowDiscountModal(false)}
-                  className="px-4 py-2 border rounded"
+                  className="w-full sm:w-auto px-4 py-2 border border-[var(--border-color)] rounded hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>
@@ -477,7 +598,7 @@ const PatientForm = () => {
                     setShowDiscountModal(false);
                     setShowPaymentModal(true);
                   }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded"
+                  className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                 >
                   Next
                 </button>
@@ -485,41 +606,64 @@ const PatientForm = () => {
             </div>
           </div>
         )}
+
+        {/* Payment Modal */}
         {showPaymentModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-            <div className="bg-white rounded p-6 w-80 shadow-lg">
+          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
               <h2 className="mb-4 text-lg font-bold">Payment Details</h2>
-              <label className="block mb-2 font-medium">Amount Paid</label>
-              <input
-                type="number"
-                min="0"
-                max={total}
-                value={amountPaid}
-                onChange={(e) => setAmountPaid(e.target.value)}
-                className="w-full mb-4 rounded border p-2"
-              />
-              <label className="block mb-2 font-medium">Payment Mode</label>
-              <select
-                value={paymentMode}
-                onChange={(e) => setPaymentMode(e.target.value)}
-                className="w-full mb-4 rounded border p-2"
-              >
-                <option value="UPI">UPI</option>
-                <option value="Cash">Cash</option>
-              </select>
-              <div className="flex justify-end gap-4">
+              <div className="space-y-4">
+                <div>
+                  <label className="block mb-2 font-medium">Amount Paid</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max={total}
+                    value={amountPaid}
+                    onChange={(e) => setAmountPaid(e.target.value)}
+                    placeholder="Enter amount paid"
+                    className="w-full rounded border p-3 border-[var(--border-color)] focus:border-[var(--brand-color)] focus:ring-[var(--brand-color)]"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2 font-medium">Payment Mode</label>
+                  <select
+                    value={paymentMode}
+                    onChange={(e) => setPaymentMode(e.target.value)}
+                    className="w-full rounded border p-3 border-[var(--border-color)] focus:border-[var(--brand-color)] focus:ring-[var(--brand-color)]"
+                  >
+                    <option value="UPI">UPI</option>
+                    <option value="Cash">Cash</option>
+                  </select>
+                </div>
+                {Number(amountPaid) < Number(total) && amountPaid !== "" && (
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
+                    <p className="text-sm text-yellow-800">
+                      Balance Amount: ₹{Number(total) - Number(amountPaid)}
+                    </p>
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-4 mt-6">
                 <button
                   onClick={() => setShowPaymentModal(false)}
-                  className="px-4 py-2 border rounded"
+                  className="w-full sm:w-auto px-4 py-2 border border-[var(--border-color)] rounded hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={submitPatientData}
-                  className="px-4 py-2 bg-green-600 text-white rounded"
-                  disabled={Number(amountPaid) > Number(total) || amountPaid === ""}
+                  className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  disabled={Number(amountPaid) > Number(total) || amountPaid === "" || isSubmitting}
                 >
-                  Confirm
+                  {isSubmitting ? (
+                    <>
+                      <LoadingSpinner size="w-4 h-4" />
+                      Processing...
+                    </>
+                  ) : (
+                    "Confirm"
+                  )}
                 </button>
               </div>
             </div>

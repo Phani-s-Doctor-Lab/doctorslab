@@ -17,7 +17,7 @@ export default function Sidebar() {
   };
 
   return (
-    <div style={{
+    <div className="h-full" style={{
         "--primary-color": "#008080",
         "--primary-light": "#e0f2f1",
         "--text-primary": "#111827",
@@ -26,7 +26,7 @@ export default function Sidebar() {
         "--border-color": "#D3D3D3",
         fontFamily: "'Public Sans', sans-serif",
       }}>
-      <aside className="w-full md:w-64 h-full flex-shrink-0 sidebar p-4 hidden md:flex flex-col justify-between bg-white border-r border-[var(--border-color)]">
+      <aside className="w-full md:w-64 h-full flex-shrink-0 sidebar p-4 flex flex-col justify-between bg-white border-r border-[var(--border-color)]">
         <div className="flex flex-col gap-8">
           {location.pathname === "/dashboard" && (
             <div>
@@ -149,7 +149,7 @@ export default function Sidebar() {
                     <span>Add Patient</span>
                 </p>
             )}
-            <p className="sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer" onClick={() => navigate("/inventory")}>
+            <p className={`sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer  ${location.pathname === "/inventory" ? "bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active" : ""}`} onClick={() => navigate("/inventory")}>
               <svg
                 data-icon="Inventory"
                 viewBox="0 0 24 24"
