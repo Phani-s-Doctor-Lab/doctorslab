@@ -28,7 +28,6 @@ export default function Sidebar() {
       }}>
       <aside className="w-full md:w-64 h-full flex-shrink-0 sidebar p-4 flex flex-col justify-between bg-white border-r border-[var(--border-color)]">
         <div className="flex flex-col gap-8">
-          {location.pathname === "/dashboard" && (
             <div>
                 {/* Logo and Title */}
                 <div className="flex items-center gap-2 px-3">
@@ -51,7 +50,6 @@ export default function Sidebar() {
                     </h1>
                 </div>
             </div>
-          )}
 
           <nav className="flex flex-col gap-2">
             <p

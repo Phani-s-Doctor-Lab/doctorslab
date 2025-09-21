@@ -761,6 +761,9 @@ export default function StaffManagementPage() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const userName =
+    localStorage.getItem("userName") || sessionStorage.getItem("userName") || "";
+
   useEffect(() => {
     fetch("http://localhost:5000/staff")
       .then((res) => res.json())
@@ -831,9 +834,8 @@ export default function StaffManagementPage() {
   return (
     <div className="min-h-screen flex flex-col" style={pageStyle}>
       {/* Header */}
-      <header className="sticky top-0 bg-white shadow z-20 flex items-center justify-between p-4 border-b border-gray-300">
+      {/* <header className="sticky top-0 bg-white shadow z-20 flex items-center justify-between p-4 border-b border-gray-300">
         <div className="flex items-center gap-3">
-          {/* Hamburger for mobile */}
           <button
             className="md:hidden p-2 rounded-md hover:bg-gray-200 transition"
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -867,7 +869,7 @@ export default function StaffManagementPage() {
             Pathology Stock Control
           </h1>
         </div>
-      </header>
+      </header> */}
 
       <div className="flex flex-grow overflow-hidden relative">
         {/* Sidebar */}
@@ -888,14 +890,64 @@ export default function StaffManagementPage() {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 px-4 sm:px-10 py-6 sm:py-8 overflow-x-auto">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-3">
-            <h1 className="text-xl sm:text-3xl font-bold text-[var(--text-primary-color)]">
-              Staff Management
-            </h1>
+        <main className="flex-1 bg-[#f0f4f7] px-4 sm:px-10 py-6 sm:py-8 overflow-x-auto">
+          <header className="flex items-center justify-between mb-8">
+              <button
+                className="md:hidden p-2 -ml-2 text-[var(--text-primary)]"
+                aria-label="Toggle sidebar"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+              >
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M4 6h16M4 12h16M4 18h16"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                  />
+                </svg>
+              </button>
+
+              <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">
+                Staff Management
+              </h1>
+
+              <div className="flex items-center gap-4">
+                <div className="relative group flex items-center">
+                  <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center cursor-pointer">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-7 h-7 text-gray-500"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-3.31 0-6 2.01-6 4.5V20h12v-1.5c0-2.49-2.69-4.5-6-4.5z"
+                      />
+                    </svg>
+                  </span>
+                  <div
+                    className="absolute right-full mr-2 bottom-1/2 translate-y-1/2 bg-gray-800 text-white text-xs rounded-md px-3 py-2 whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity shadow-lg z-50"
+                    style={{ minWidth: "5rem" }}
+                  >
+                    {userName || "No Name"}
+                  </div>
+                </div>
+              </div>
+            </header>
+          <div className="flex justify-end items-end mb-6 sm:mb-8 gap-3">
             <button
               onClick={openAddStaff}
-              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[var(--primary-color)] text-white text-sm sm:text-base font-semibold rounded-full shadow-sm hover:opacity-90"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[var(--primary-color)] text-white text-sm sm:text-base font-semibold rounded-xl md:rounded-3xl shadow-sm hover:opacity-90"
             >
               <span className="text-lg sm:text-xl">＋</span> Add Staff
             </button>

@@ -60,6 +60,7 @@ const PatientForm = () => {
   const [selectedDoctor, setSelectedDoctor] = useState("");
   const [tests, setTests] = useState([]);
   const [total, setTotal] = useState(0);
+  const [testSearchTerm, setTestSearchTerm] = useState("");
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [pendingSubmit, setPendingSubmit] = useState(false); // To prevent double submits
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -71,6 +72,9 @@ const PatientForm = () => {
   const [isLoadingTests, setIsLoadingTests] = useState(false);
   const [isLoadingDoctors, setIsLoadingDoctors] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const userName =
+    localStorage.getItem("userName") || sessionStorage.getItem("userName") || "";
 
   // Mock API calls with loading states
     useEffect(() => {
@@ -109,7 +113,7 @@ const PatientForm = () => {
       const newTestId = location.state.newlyAddedTest;
 
       // Try to find in tests list first
-      const found = tests.find((t) => getTestId(t) === newTestId);
+      const found = filteredTests.find((t) => getTestId(t) === newTestId);
 
       if (found) {
         // Ensure it’s selected only once
@@ -189,7 +193,11 @@ const PatientForm = () => {
     handleChange("doctor", doctorSearchInput);
   };
 
-  
+  const filteredTests = React.useMemo(() => {
+    if (!testSearchTerm.trim()) return tests;
+    return tests.filter((t) => t.testName.toLowerCase().includes(testSearchTerm.toLowerCase()));
+  }, [testSearchTerm, tests]);
+
   const getTestId = (test) => test.id || test._id || test.testId;
 
   const handleTestToggle = (test) => {
@@ -274,9 +282,8 @@ const PatientForm = () => {
         fontFamily: '"Public Sans", sans-serif',
       }}
     >
-      <header className="sticky top-0 z-10 flex items-center justify-between whitespace-nowrap border-b border-solid border-[var(--border-color)] bg-[var(--surface-color)] px-4 py-3 shadow-sm lg:px-10">
+      {/* <header className="sticky top-0 z-10 flex items-center justify-between whitespace-nowrap border-b border-solid border-[var(--border-color)] bg-[var(--surface-color)] px-4 py-3 shadow-sm lg:px-10">
         <div className="flex items-center gap-4">
-          {/* Hamburger Menu Button - Only visible on mobile */}
           <button
             className="lg:hidden p-2 rounded-md hover:bg-gray-100"
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -310,7 +317,7 @@ const PatientForm = () => {
           </svg>
           <h1 className="text-lg sm:text-xl font-bold truncate">Pathology Services</h1>
         </div>
-      </header>
+      </header> */}
 
       <div className="relative flex flex-col min-h-screen lg:flex-row">
         {/* Sidebar overlay for mobile */}
@@ -330,8 +337,61 @@ const PatientForm = () => {
           <Sidebar />
         </div>
 
-        <main className="flex-1 px-4 py-4 sm:px-6 lg:px-8 sm:py-8">
-          <div className="mx-auto max-w-7xl rounded-lg bg-[var(--surface-color)] p-4 sm:p-6 shadow-lg text-left">
+        <main className="flex-grow bg-[#f0f4f7] overflow-auto p-6">
+          <header className="flex items-center justify-between mb-8">
+              <button
+                className="md:hidden p-2 -ml-2 text-[var(--text-primary)]"
+                aria-label="Toggle sidebar"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+              >
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M4 6h16M4 12h16M4 18h16"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                  />
+                </svg>
+              </button>
+
+              <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">
+                Add Patient
+              </h1>
+
+              <div className="flex items-center gap-4">
+                <div className="relative group flex items-center">
+                  <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center cursor-pointer">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-7 h-7 text-gray-500"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-3.31 0-6 2.01-6 4.5V20h12v-1.5c0-2.49-2.69-4.5-6-4.5z"
+                      />
+                    </svg>
+                  </span>
+                  <div
+                    className="absolute right-full mr-2 bottom-1/2 translate-y-1/2 bg-gray-800 text-white text-xs rounded-md px-3 py-2 whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity shadow-lg z-50"
+                    style={{ minWidth: "5rem" }}
+                  >
+                    {userName || "No Name"}
+                  </div>
+                </div>
+              </div>
+            </header>
+          <div className="mx-auto rounded-lg bg-[var(--surface-color)] p-4 sm:p-6 shadow-lg text-left">
             <h2 className="mb-4 sm:mb-6 text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight">
               Patient Information and Test Selection
             </h2>
@@ -446,14 +506,22 @@ const PatientForm = () => {
                   {isLoadingTests && <LoadingSpinner />}
                 </div>
 
+                <input
+                  type="text"
+                  placeholder="Search tests..."
+                  className="w-full border border-[var(--border-color)] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:border-[var(--border-color)] mb-2"
+                  value={testSearchTerm}
+                  onChange={(e) => setTestSearchTerm(e.target.value)}
+                />
+
                 {/* Mobile Card View */}
                 <div className="block sm:hidden space-y-4">
                   {isLoadingTests ? (
                     <div className="flex justify-center py-8">
                       <LoadingSpinner size="w-8 h-8" />
                     </div>
-                  ) : tests.length > 0 ? (
-                    tests.map((test, idx) => (
+                  ) : filteredTests.length > 0 ? (
+                    filteredTests.map((test, idx) => (
                       <div key={idx} className="border border-[var(--border-color)] rounded-lg p-4 bg-[var(--surface-color)]">
                         <div className="flex items-start justify-between mb-2">
                           <h4 className="font-medium text-[var(--text-primary)] text-sm leading-tight">
@@ -507,8 +575,8 @@ const PatientForm = () => {
                             <LoadingSpinner size="w-8 h-8" className="mx-auto" />
                           </td>
                         </tr>
-                      ) : tests.length > 0 ? (
-                        tests.map((test, idx) => (
+                      ) : filteredTests.length > 0 ? (
+                        filteredTests.map((test, idx) => (
                           <tr key={idx}>
                             <td className="px-4 lg:px-6 py-4 text-sm font-medium text-[var(--text-primary)] whitespace-normal break-words max-w-xs">
                               {test.testName}

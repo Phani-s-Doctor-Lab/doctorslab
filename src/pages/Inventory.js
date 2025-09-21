@@ -1049,52 +1049,52 @@ const InventoryModal = ({ visible, onClose, onSubmit, initialData }) => {
                     required
                     min={0}
                   />
-                  <select 
-                    name="unit" 
-                    value={form.unit} 
-                    onChange={handleChange} 
+                  <select
+                    name="unit"
+                    value={form.unit}
+                    onChange={handleChange}
                     className="border rounded px-3 py-2 focus:ring-2 focus:ring-[var(--brand-color)]"
                   >
                     {unitOptions.map(u => <option key={u} value={u}>{u}</option>)}
                   </select>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-medium mb-1">Purchase Date</label>
-                  <input 
-                    name="purchaseDate" 
-                    type="date" 
-                    value={form.purchaseDate} 
-                    onChange={handleChange} 
-                    className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-[var(--brand-color)]" 
-                    required 
+                  <input
+                    name="purchaseDate"
+                    type="date"
+                    value={form.purchaseDate}
+                    onChange={handleChange}
+                    className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-[var(--brand-color)]"
+                    required
                   />
                 </div>
                 <div>
                   <label className="block font-medium mb-1">Amount</label>
-                  <input 
-                    name="amount" 
-                    type="number" 
-                    value={form.amount} 
-                    onChange={handleChange} 
-                    className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-[var(--brand-color)]" 
-                    required 
-                    min={0} 
+                  <input
+                    name="amount"
+                    type="number"
+                    value={form.amount}
+                    onChange={handleChange}
+                    className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-[var(--brand-color)]"
+                    required
+                    min={0}
                   />
                 </div>
               </div>
-              
+
               <div>
                 <label className="block font-medium mb-1">Expiry Date</label>
-                <input 
-                  name="expiryDate" 
-                  type="date" 
-                  value={form.expiryDate} 
-                  onChange={handleChange} 
-                  className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-[var(--brand-color)]" 
-                  required 
+                <input
+                  name="expiryDate"
+                  type="date"
+                  value={form.expiryDate}
+                  onChange={handleChange}
+                  className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-[var(--brand-color)]"
+                  required
                 />
               </div>
             </>
@@ -1102,10 +1102,10 @@ const InventoryModal = ({ visible, onClose, onSubmit, initialData }) => {
 
           <div>
             <label className="block font-medium mb-1">Status</label>
-            <select 
-              name="status" 
-              value={form.status} 
-              onChange={handleChange} 
+            <select
+              name="status"
+              value={form.status}
+              onChange={handleChange}
               className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-[var(--brand-color)]"
             >
               <option>In Stock</option>
@@ -1117,9 +1117,9 @@ const InventoryModal = ({ visible, onClose, onSubmit, initialData }) => {
           {isEdit && (
             <div>
               <label className="block font-semibold mb-2">Batches</label>
-              <button 
-                type="button" 
-                onClick={addBatch} 
+              <button
+                type="button"
+                onClick={addBatch}
                 className="mb-4 text-sm text-blue-600 hover:underline"
               >
                 + Add Batch
@@ -1146,9 +1146,9 @@ const InventoryModal = ({ visible, onClose, onSubmit, initialData }) => {
                         </select>
                       </div>
                     </div>
-                    <button 
-                      type="button" 
-                      onClick={() => removeBatch(idx)} 
+                    <button
+                      type="button"
+                      onClick={() => removeBatch(idx)}
                       className="text-red-600 font-bold px-2 py-1 self-start sm:self-end h-8 hover:bg-red-50 rounded"
                     >
                       ×
@@ -1198,16 +1198,16 @@ const InventoryModal = ({ visible, onClose, onSubmit, initialData }) => {
           )}
 
           <div className="mt-6 flex flex-col sm:flex-row justify-end gap-3">
-            <button 
-              type="button" 
-              onClick={onClose} 
+            <button
+              type="button"
+              onClick={onClose}
               className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400 transition-colors"
             >
               Cancel
             </button>
-            <button 
-              type="button" 
-              onClick={handleSubmit} 
+            <button
+              type="button"
+              onClick={handleSubmit}
               className="px-4 py-2 rounded bg-[var(--brand-color)] text-white hover:bg-teal-700 transition-colors"
             >
               {isEdit ? "Save" : "Add"}
@@ -1244,7 +1244,7 @@ const AddBatchModal = ({ visible, onClose, onSubmit, item }) => {
     const { name, value } = e.target;
     setBatch(prev => {
       const newBatch = { ...prev, [name]: value };
-      if(name === "quantity") {
+      if (name === "quantity") {
         const qtyNum = Number(value);
         newBatch.lowStockThreshold = isNaN(qtyNum) ? 0 : Math.ceil(qtyNum * 0.2);
       }
@@ -1266,22 +1266,22 @@ const AddBatchModal = ({ visible, onClose, onSubmit, item }) => {
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50 p-4">
       <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg w-full max-w-md">
         <h3 className="text-lg sm:text-xl font-semibold mb-4">Add Batch - {item?.item}</h3>
-        
+
         <div className="space-y-3">
           <div>
             <label className="block text-sm font-medium mb-1">Quantity/Volume</label>
             <div className="flex gap-2">
-              <input 
-                name="quantity" 
-                type="number" 
-                value={batch.quantity} 
-                onChange={handleChange} 
-                className="flex-1 border rounded px-3 py-2 focus:ring-2 focus:ring-[var(--brand-color)]" 
+              <input
+                name="quantity"
+                type="number"
+                value={batch.quantity}
+                onChange={handleChange}
+                className="flex-1 border rounded px-3 py-2 focus:ring-2 focus:ring-[var(--brand-color)]"
               />
-              <select 
-                name="unit" 
-                value={batch.unit} 
-                onChange={handleChange} 
+              <select
+                name="unit"
+                value={batch.unit}
+                onChange={handleChange}
                 className="border rounded px-3 py-2 focus:ring-2 focus:ring-[var(--brand-color)]"
               >
                 {unitOptions.map(u => <option key={u} value={u}>{u}</option>)}
@@ -1291,34 +1291,34 @@ const AddBatchModal = ({ visible, onClose, onSubmit, item }) => {
 
           <div>
             <label className="block text-sm font-medium mb-1">Purchase Date</label>
-            <input 
-              type="date" 
-              name="purchaseDate" 
-              value={batch.purchaseDate} 
-              onChange={handleChange} 
-              className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-[var(--brand-color)]" 
+            <input
+              type="date"
+              name="purchaseDate"
+              value={batch.purchaseDate}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-[var(--brand-color)]"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">Amount</label>
-            <input 
-              type="number" 
-              name="amount" 
-              value={batch.amount} 
-              onChange={handleChange} 
-              className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-[var(--brand-color)]" 
+            <input
+              type="number"
+              name="amount"
+              value={batch.amount}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-[var(--brand-color)]"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">Expiry Date</label>
-            <input 
-              type="date" 
-              name="expiryDate" 
-              value={batch.expiryDate} 
-              onChange={handleChange} 
-              className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-[var(--brand-color)]" 
+            <input
+              type="date"
+              name="expiryDate"
+              value={batch.expiryDate}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-[var(--brand-color)]"
             />
           </div>
 
@@ -1328,14 +1328,14 @@ const AddBatchModal = ({ visible, onClose, onSubmit, item }) => {
         </div>
 
         <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6">
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
           >
             Cancel
           </button>
-          <button 
-            onClick={submit} 
+          <button
+            onClick={submit}
             className="px-4 py-2 bg-[var(--brand-color)] text-white rounded hover:bg-teal-700 transition-colors"
           >
             Add
@@ -1478,7 +1478,7 @@ const StockTable = ({ onEdit, onAddBatch, onRefresh }) => {
           </div>
         </div>
       </div>
-      
+
       <div className="overflow-x-auto rounded-xl border border-[var(--border-color)] bg-white shadow-sm">
         <table className="w-full text-sm min-w-[800px]">
           <thead className="bg-gray-100">
@@ -1521,15 +1521,14 @@ const StockTable = ({ onEdit, onAddBatch, onRefresh }) => {
                     <td className="px-3 sm:px-6 py-3 text-gray-700 whitespace-nowrap">{earliestExpiry(item)}</td>
                     <td className="px-3 sm:px-6 py-3">
                       <span
-                        className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${
-                          status === "Low Stock"
+                        className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${status === "Low Stock"
                             ? "bg-yellow-100 text-yellow-800"
                             : status === "Expired"
                               ? "bg-red-100 text-red-800"
                               : status === "Out of Stock"
-                              ? "bg-red-800 text-red-900"
-                              : "bg-green-100 text-green-800"
-                        }`}
+                                ? "bg-red-800 text-red-900"
+                                : "bg-green-100 text-green-800"
+                          }`}
                       >
                         {status}
                       </span>
@@ -1606,18 +1605,18 @@ const StockTable = ({ onEdit, onAddBatch, onRefresh }) => {
                                           className="w-16 border rounded px-1 py-0.5 text-xs"
                                           autoFocus
                                         />
-                                        <button 
-                                          className="text-green-600 px-1 hover:bg-green-50 rounded" 
-                                          title="Save" 
-                                          type="button" 
+                                        <button
+                                          className="text-green-600 px-1 hover:bg-green-50 rounded"
+                                          title="Save"
+                                          type="button"
                                           onClick={() => saveBatchUpdate(item, i)}
                                         >
                                           ✔
                                         </button>
-                                        <button 
-                                          className="text-gray-500 px-1 hover:bg-gray-50 rounded" 
-                                          title="Cancel" 
-                                          type="button" 
+                                        <button
+                                          className="text-gray-500 px-1 hover:bg-gray-50 rounded"
+                                          title="Cancel"
+                                          type="button"
                                           onClick={() => setEditingBatch({ itemId: null, batchIdx: null })}
                                         >
                                           ✖
@@ -1673,7 +1672,7 @@ const LowStockAlerts = () => {
     fetch("http://localhost:5000/inventory/low-stock")
       .then((res) => res.json())
       .then(({ lowStockItems }) => setItems(lowStockItems))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
@@ -1690,7 +1689,7 @@ const LowStockAlerts = () => {
   }
 
   if (!items.length) return null;
-  
+
   return (
     <section>
       <h2 className="text-xl sm:text-2xl font-bold mb-4">Low Stock Alerts</h2>
@@ -1702,7 +1701,7 @@ const LowStockAlerts = () => {
           >
             <div className="flex items-center justify-center rounded-full bg-yellow-100 text-yellow-600 w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0">
               <svg fill="currentColor" height="20" width="20" viewBox="0 0 256 256">
-                <path d="M236.8,188.09,149.35,36.22h0a24.76,24.76,0,0,0-42.7,0L19.2,188.09a23.51,23.51,0,0,0,0,23.72A24.35,24.35,0,0,0,40.55,224h174.9a24.35,24.35,0,0,0,21.33-12.19A23.51,23.51,0,0,0,236.8,188.09ZM120,104a8,8,0,0,1,16,0v40a8,8,0,0,1-16,0Zm8,88a12,12,0,1,1,12-12A12,12,0,0,1,128,192Z"/>
+                <path d="M236.8,188.09,149.35,36.22h0a24.76,24.76,0,0,0-42.7,0L19.2,188.09a23.51,23.51,0,0,0,0,23.72A24.35,24.35,0,0,0,40.55,224h174.9a24.35,24.35,0,0,0,21.33-12.19A23.51,23.51,0,0,0,236.8,188.09ZM120,104a8,8,0,0,1,16,0v40a8,8,0,0,1-16,0Zm8,88a12,12,0,1,1,12-12A12,12,0,0,1,128,192Z" />
               </svg>
             </div>
             <div className="flex-1 min-w-0">
@@ -1729,7 +1728,7 @@ const ExpiryNotifications = () => {
     fetch("http://localhost:5000/inventory/expired")
       .then((res) => res.json())
       .then(({ expiredItems }) => setItems(expiredItems))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
@@ -1806,17 +1805,17 @@ const MainContent = () => {
     setEditingItem(null);
     setModalOpen(true);
   }
-  
+
   function openEdit(item) {
     setEditingItem(item);
     setModalOpen(true);
   }
-  
+
   function openAddBatch(item) {
     setAddBatchItem(item);
     setBatchModalOpen(true);
   }
-  
+
   function closeModal() {
     setModalOpen(false);
     setBatchModalOpen(false);
@@ -1891,7 +1890,7 @@ const MainContent = () => {
   return (
     <>
       {saving && <LoadingOverlay message="Saving..." />}
-      
+
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h1 className="text-2xl sm:text-4xl font-bold">Stock Control</h1>
         <button
@@ -1937,6 +1936,9 @@ const MainContent = () => {
 const PathologyStockControl = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const userName =
+    localStorage.getItem("userName") || sessionStorage.getItem("userName") || "";
+
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
@@ -1947,7 +1949,7 @@ const PathologyStockControl = () => {
 
   return (
     <div
-      className="relative flex min-h-screen bg-[var(--background-color)]"
+      className="relative flex flex-col h-screen bg-[var(--background-color)]"
       style={{
         fontFamily: "'Public Sans', sans-serif",
         "--brand-color": "#008080",
@@ -1958,68 +1960,111 @@ const PathologyStockControl = () => {
         "--border-color": "#D3D3D3"
       }}
     >
-      {/* Mobile Overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-          onClick={closeSidebar}
-        />
-      )}
+      {/* <header className="sticky top-0 z-10 flex items-center justify-between border-b border-solid border-[var(--border-color)] bg-[var(--surface-color)] px-6 py-3 shadow-sm sm:px-10">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            aria-label="Toggle sidebar"
+            className="md:hidden p-2 rounded-md hover:bg-gray-200 transition"
+          >
+            <svg
+              className="h-6 w-6 text-[var(--text-primary)]"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+          <h1 className="text-xl font-bold">Manage Patient Tests</h1>
+        </div>
+      </header> */}
 
-      {/* Sidebar */}
-     <div
-        className={`fixed inset-y-0 left-0 z-50 w-72 transform ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0`}
-      >
-        <div className="w-full h-full">
+      <div className="relative flex h-screen overflow-hidden">
+        {/* Sidebar */}
+        <div
+          className={`md:relative fixed md:h-full h-screen inset-y-0 left-0 z-30 w-64 bg-white border-r border-[var(--border-color)] shadow-lg transform transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+            }`}
+        >
           <Sidebar />
         </div>
-      </div>
 
-      {/* Main Content */}
-      <main className="flex-1 min-w-0 flex flex-col">
-        {/* Header */}
-        <header className="sticky top-0 bg-white shadow z-30 flex items-center justify-between p-4 lg:px-6 border-b border-gray-300">
-          <div className="flex items-center gap-2 sm:gap-4">
-            <button
-              onClick={toggleSidebar}
-              aria-label="Toggle sidebar"
-              className="lg:hidden p-2 rounded-md hover:bg-gray-200 transition"
-            >
-              <svg
-                className="h-6 w-6 text-[var(--text-primary)]"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
+        {/* Overlay */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black opacity-50 z-20 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+
+        {/* Main Content */}
+        <main className="flex-grow bg-[#f0f4f7] overflow-auto p-6">
+          <header className="flex items-center justify-between mb-8">
+              <button
+                className="md:hidden p-2 -ml-2 text-[var(--text-primary)]"
+                aria-label="Toggle sidebar"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-            </button>
-            <h1 className="text-lg sm:text-2xl font-bold flex items-center gap-2">
-              <svg className="w-6 h-6 sm:w-8 sm:h-8 text-[var(--brand-color)] flex-shrink-0" fill="none" viewBox="0 0 48 48">
-                <path
-                  d="M42.17 20.17L27.83 5.83c1.3 1.3 2.04 3.36 1.39 5.04-1 2.21-4.17 3.8-6.56 3.83-3.3 0-5.1-3.5-7.5-3.84-3.7-.68-6.5-2.82-8-6C6.05 10 14.91 11 17.77 11c2 .3 7.1 3.8 9.83 5.7 3.3 2.4 6 5 8 8 3.3 2 .8 16-5.5 17-9.2-1-8.5-4-11-4C12 27 10 23 7 16.7c1.4-1.8 3.6-8 5.5-11 2.5 3 17 3 17 10z"
-                  fill="currentColor"
-                />
-              </svg>
-              <span className="hidden sm:inline">Pathology Stock Control</span>
-              <span className="sm:hidden">Stock Control</span>
-            </h1>
-          </div>
-        </header>
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M4 6h16M4 12h16M4 18h16"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                  />
+                </svg>
+              </button>
 
-        {/* Content Area */}
-        <div className="flex-1 bg-[var(--background-color)] p-4 sm:p-6 lg:p-8 overflow-auto">
-          <MainContent />
-        </div>
-      </main>
+              <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">
+                Inventory Management
+              </h1>
+
+              <div className="flex items-center gap-4">
+                <div className="relative group flex items-center">
+                  <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center cursor-pointer">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-7 h-7 text-gray-500"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-3.31 0-6 2.01-6 4.5V20h12v-1.5c0-2.49-2.69-4.5-6-4.5z"
+                      />
+                    </svg>
+                  </span>
+                  <div
+                    className="absolute right-full mr-2 bottom-1/2 translate-y-1/2 bg-gray-800 text-white text-xs rounded-md px-3 py-2 whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity shadow-lg z-50"
+                    style={{ minWidth: "5rem" }}
+                  >
+                    {userName || "No Name"}
+                  </div>
+                </div>
+              </div>
+            </header>
+          {/* Content Area */}
+          <div className="flex-1 bg-[var(--background-color)] p-4 sm:p-6 lg:p-8 overflow-auto">
+            <MainContent />
+          </div>
+        </main>
+      </div>
     </div>
   );
 };

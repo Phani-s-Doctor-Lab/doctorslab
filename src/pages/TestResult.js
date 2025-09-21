@@ -780,6 +780,10 @@ export default function EnterTestResult() {
   const [loading, setLoading] = useState(true);
   const passedState = location.state || {};
   const testGroupFromState = passedState.testGroupOnSelectedDate;
+
+  const userName =
+    localStorage.getItem("userName") || sessionStorage.getItem("userName") || "";
+    
   // Fetch data on load
   useEffect(() => {
     async function fetchAll() {
@@ -992,33 +996,123 @@ export default function EnterTestResult() {
     }
   }
 
-  // ...All other functions including save usage, submit results, etc.
-
-  if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>;
-  if (!patient || !test) return <div className="p-10">No data available</div>;
-
   return (
-    <div className="flex min-h-screen bg-gray-50 font-sans">
-      {/* Sidebar and overlay */}
-      <div className={`fixed inset-y-0 left-0 z-40 bg-white w-64 shadow-lg border-r border-gray-200 transform transition duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:static md:translate-x-0`}>
-        <Sidebar onLogout={() => alert("Logout")} />
-      </div>
-      {/* overlay */}
-      {sidebarOpen && <div className="fixed inset-0 z-30 bg-black opacity-25 md:hidden" onClick={() => setSidebarOpen(false)} />}
-      {/* Content */}
-      <div className="flex flex-col flex-1 md:ml-64">
-        {/* Header */}
-        <header className="sticky top-0 z-50 bg-white shadow p-4 flex items-center gap-4">
-          <button aria-label="Toggle Sidebar" className="md:hidden p-2 rounded-md hover:bg-gray-200" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+    <div className="flex h-screen flex-col bg-gray-50 font-sans" style={{
+      "--brand-color": "#008080",
+      "--background-color": "#f7f9fc",
+      "--surface-color": "#ffffff",
+      "--text-primary": "#111518",
+      "--text-secondary": "#637988",
+      "--border-color": "#D3D3D3",
+      fontFamily: '"Public Sans", sans-serif',
+    }}>
+      {/* <header className="sticky top-0 z-10 flex items-center justify-between border-b border-solid border-[var(--border-color)] bg-[var(--surface-color)] px-6 py-3 shadow-sm sm:px-10">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            aria-label="Toggle sidebar"
+            className="md:hidden p-2 rounded-md hover:bg-gray-200 transition"
+          >
+            <svg
+              className="h-6 w-6 text-[var(--text-primary)]"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
             </svg>
           </button>
-          <h1 className="text-xl font-semibold">Enter Test Result</h1>
-        </header>
+          <h1 className="text-xl font-bold">Manage Patient Tests</h1>
+        </div>
+      </header> */}
+      <div className="relative flex h-screen overflow-hidden">
+        {/* Sidebar and overlay */}
+        <div
+          className={`md:relative fixed md:h-full h-screen inset-y-0 left-0 z-30 w-64 bg-white border-r border-[var(--border-color)] shadow-lg transform transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+            }`}
+        >
+          <Sidebar />
+        </div>
+
+        {sidebarOpen && (
+          <div
+            onClick={() => setSidebarOpen(false)}
+            className="fixed inset-0 z-20 bg-black bg-opacity-50 md:hidden"
+            aria-hidden="true"
+          />
+        )}
 
         {/* Main content */}
-        <main className="flex-grow overflow-auto p-6">
+        <main className="flex-grow bg-[#f0f4f7] overflow-auto p-6">
+
+          <header className="flex items-center justify-between mb-8">
+              <button
+                className="md:hidden p-2 -ml-2 text-[var(--text-primary)]"
+                aria-label="Toggle sidebar"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+              >
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M4 6h16M4 12h16M4 18h16"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                  />
+                </svg>
+              </button>
+
+              <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">
+                Patient Test Result
+              </h1>
+
+              <div className="flex items-center gap-4">
+                <div className="relative group flex items-center">
+                  <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center cursor-pointer">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-7 h-7 text-gray-500"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-3.31 0-6 2.01-6 4.5V20h12v-1.5c0-2.49-2.69-4.5-6-4.5z"
+                      />
+                    </svg>
+                  </span>
+                  <div
+                    className="absolute right-full mr-2 bottom-1/2 translate-y-1/2 bg-gray-800 text-white text-xs rounded-md px-3 py-2 whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity shadow-lg z-50"
+                    style={{ minWidth: "5rem" }}
+                  >
+                    {userName || "No Name"}
+                  </div>
+                </div>
+              </div>
+            </header>
+
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="w-12 h-12 border-4 rounded-full border-gray-300 border-t-[var(--brand-color)] animate-spin"></div>
+            </div>
+          ) : (
+
+          <>
+            
           {/* Patient & Test Info */}
           <div className="max-w-4xl mx-auto bg-white rounded shadow p-6">
             <h2 className="text-3xl mb-6 font-bold">{test.testName}</h2>
@@ -1037,6 +1131,13 @@ export default function EnterTestResult() {
               {test.parameters.map((p, i) => (
                 <div key={i} className="flex flex-col sm:flex-row sm:items-center gap-4">
                   <label className="flex-grow font-medium">{p.name} ({p.unit || "Unit"})</label>
+                  <div className="w-1/3 text-gray-500">
+                    {p.referenceRanges?.length
+                      ? p.referenceRanges.map((r, i) => (
+                        <div key={i}>{r.group}: {r.range}</div>
+                      ))
+                      : "--"}
+                  </div>
                   <input
                     type="text"
                     value={values[p.name] || ""}
@@ -1095,7 +1196,7 @@ export default function EnterTestResult() {
             </button>
           </div>
 
-          <div className="flex justify-between">
+          <div className="max-w-4xl mx-auto flex justify-end gap-4 mt-8">
             <button
               onClick={() => navigate("/patients", { state: { patientId, fromResults: true } })}
               className="px-6 py-2 rounded bg-gray-500 text-white font-bold hover:bg-gray-600"
@@ -1103,7 +1204,7 @@ export default function EnterTestResult() {
               Back
             </button>
             <button
-              className="px-6 py-2 rounded bg-green-600 text-white font-bold hover:bg-green-700 mb-4"
+              className="px-6 py-2 rounded bg-green-600 text-white font-bold hover:bg-green-700"
               onClick={() => setShowSignatureDialog(true)}
             >
               Download PDF
@@ -1246,8 +1347,10 @@ export default function EnterTestResult() {
             </div>
           )}
 
+          </>
+          )}
         </main>
       </div>
-    </div>
+    </div >
   );
 }

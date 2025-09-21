@@ -43,12 +43,14 @@ const Dashboard = () => {
   const [cases, setCases] = useState([]);
   const [filter, setFilter] = useState("1d");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const userName =
     localStorage.getItem("userName") || sessionStorage.getItem("userName") || "";
 
   useEffect(() => {
     async function fetchData() {
+      setLoading(true);
       const patientsResp = await fetch("http://localhost:5000/patients");
       const patientsData = await patientsResp.json();
       const patientsList = patientsData.patients || patientsData || [];
@@ -146,10 +148,27 @@ const Dashboard = () => {
       });
 
       setCases(patientsList);
+
+      setLoading(false);
     }
 
     fetchData();
   }, []);
+
+  const CardLoadingSkeleton = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      {[1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="bg-white p-6 rounded-lg shadow-sm border border-[var(--border-color)] animate-pulse"
+        >
+          <div className="h-4 w-1/3 bg-gray-200 rounded mb-4" />
+          <div className="h-8 w-2/3 bg-gray-200 rounded mb-2" />
+          <div className="h-4 w-1/5 bg-gray-100 rounded" />
+        </div>
+      ))}
+    </div>
+  );
 
   const filteredCases = React.useMemo(() => {
     if (filter === "all") return cases;
@@ -173,9 +192,8 @@ const Dashboard = () => {
     >
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-[var(--border-color)] shadow-lg h-screen flex flex-col transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-[var(--border-color)] shadow-lg h-screen flex flex-col transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         <Sidebar />
       </div>
@@ -190,7 +208,7 @@ const Dashboard = () => {
       )}
 
       {/* Main content */}
-      <main className="flex-1 p-6 lg:p-8 lg:ml-28" aria-label="Main content area">
+      <main className="flex-grow bg-[#f0f4f7] overflow-auto p-6" aria-label="Main content area">
         <header className="flex items-center justify-between mb-8">
           <button
             className="md:hidden p-2 -ml-2 text-[var(--text-primary)]"
@@ -245,238 +263,241 @@ const Dashboard = () => {
           </div>
         </header>
 
-        {/* Stats cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <div className="card bg-white p-6 rounded-lg shadow-sm border border-[var(--border-color)]">
-            <p className="text-[var(--text-secondary)] text-sm font-medium">
-              Number of Patients
-            </p>
-            <p className="text-[var(--text-primary)] text-3xl font-bold mt-2">
-              {stats.patients}
-            </p>
-            <p
-              className={`text-sm font-medium mt-1 flex items-center gap-1 ${
-                stats.patientsChange >= 0 ? "text-teal-600" : "text-red-600"
-              }`}
-            >
-              <svg
-                className="h-4 w-4"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                {stats.patientsChange >= 0 ? (
-                  <path
-                    clipRule="evenodd"
-                    d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm3.707-8.707l-3-3a1 1 0 0 0-1.414 0l-3 3a1 1 0 0 0 1.414 1.414L9 9.414V13a1 1 0 1 0 2 0V9.414l1.293 1.293a1 1 0 0 0 1.414-1.414z"
-                    fillRule="evenodd"
-                  />
-                ) : (
-                  <path d="M10 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16zm-3.707 7.707l3 3a1 1 0 0 0 1.414 0l3-3a1 1 0 0 0-1.414-1.414L11 10.586V7a1 1 0 1 0-2 0v3.586L7.707 8.293a1 1 0 0 0-1.414 1.414z" />
-                )}
-              </svg>
-              {Math.abs(stats.patientsChange).toFixed(1)}% from last month
-            </p>
-          </div>
+        {loading ? (
+          <CardLoadingSkeleton />
+        ) : (
+          <>
+            {/* Stats cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              <div className="card bg-white p-6 rounded-lg shadow-sm border border-[var(--border-color)]">
+                <p className="text-[var(--text-secondary)] text-sm font-medium">
+                  Number of Patients
+                </p>
+                <p className="text-[var(--text-primary)] text-3xl font-bold mt-2">
+                  {stats.patients}
+                </p>
+                <p
+                  className={`text-sm font-medium mt-1 flex items-center gap-1 ${stats.patientsChange >= 0 ? "text-teal-600" : "text-red-600"
+                    }`}
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    {stats.patientsChange >= 0 ? (
+                      <path
+                        clipRule="evenodd"
+                        d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm3.707-8.707l-3-3a1 1 0 0 0-1.414 0l-3 3a1 1 0 0 0 1.414 1.414L9 9.414V13a1 1 0 1 0 2 0V9.414l1.293 1.293a1 1 0 0 0 1.414-1.414z"
+                        fillRule="evenodd"
+                      />
+                    ) : (
+                      <path d="M10 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16zm-3.707 7.707l3 3a1 1 0 0 0 1.414 0l3-3a1 1 0 0 0-1.414-1.414L11 10.586V7a1 1 0 1 0-2 0v3.586L7.707 8.293a1 1 0 0 0-1.414 1.414z" />
+                    )}
+                  </svg>
+                  {Math.abs(stats.patientsChange).toFixed(1)}% from last month
+                </p>
+              </div>
 
-          <div className="card bg-white p-6 rounded-lg shadow-sm border border-[var(--border-color)]">
-            <p className="text-[var(--text-secondary)] text-sm font-medium">
-              Tests Conducted
-            </p>
-            <p className="text-[var(--text-primary)] text-3xl font-bold mt-2">
-              {stats.tests}
-            </p>
-            <p
-              className={`text-sm font-medium mt-1 flex items-center gap-1 ${
-                stats.testsChange >= 0 ? "text-teal-600" : "text-red-600"
-              }`}
-            >
-              <svg
-                className="h-4 w-4"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                {stats.testsChange >= 0 ? (
-                  <path
-                    clipRule="evenodd"
-                    d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm3.707-8.707l-3-3a1 1 0 0 0-1.414 0l-3 3a1 1 0 0 0 1.414 1.414L9 9.414V13a1 1 0 1 0 2 0V9.414l1.293 1.293a1 1 0 0 0 1.414-1.414z"
-                    fillRule="evenodd"
-                  />
-                ) : (
-                  <path d="M10 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16zm-3.707 7.707l3 3a1 1 0 0 0 1.414 0l3-3a1 1 0 0 0-1.414-1.414L11 10.586V7a1 1 0 1 0-2 0v3.586L7.707 8.293a1 1 0 0 0-1.414 1.414z" />
-                )}
-              </svg>
-              {Math.abs(stats.testsChange).toFixed(1)}% from last month
-            </p>
-          </div>
+              <div className="card bg-white p-6 rounded-lg shadow-sm border border-[var(--border-color)]">
+                <p className="text-[var(--text-secondary)] text-sm font-medium">
+                  Tests Conducted
+                </p>
+                <p className="text-[var(--text-primary)] text-3xl font-bold mt-2">
+                  {stats.tests}
+                </p>
+                <p
+                  className={`text-sm font-medium mt-1 flex items-center gap-1 ${stats.testsChange >= 0 ? "text-teal-600" : "text-red-600"
+                    }`}
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    {stats.testsChange >= 0 ? (
+                      <path
+                        clipRule="evenodd"
+                        d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm3.707-8.707l-3-3a1 1 0 0 0-1.414 0l-3 3a1 1 0 0 0 1.414 1.414L9 9.414V13a1 1 0 1 0 2 0V9.414l1.293 1.293a1 1 0 0 0 1.414-1.414z"
+                        fillRule="evenodd"
+                      />
+                    ) : (
+                      <path d="M10 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16zm-3.707 7.707l3 3a1 1 0 0 0 1.414 0l3-3a1 1 0 0 0-1.414-1.414L11 10.586V7a1 1 0 1 0-2 0v3.586L7.707 8.293a1 1 0 0 0-1.414 1.414z" />
+                    )}
+                  </svg>
+                  {Math.abs(stats.testsChange).toFixed(1)}% from last month
+                </p>
+              </div>
 
-          <div className="card bg-white p-6 rounded-lg shadow-sm border border-[var(--border-color)]">
-            <p className="text-[var(--text-secondary)] text-sm font-medium">
-              Revenue
-            </p>
-            <p className="text-[var(--text-primary)] text-3xl font-bold mt-2">
-              ₹{stats.revenue}
-            </p>
-            <p
-              className={`text-sm font-medium mt-1 flex items-center gap-1 ${
-                stats.revenueChange >= 0 ? "text-teal-600" : "text-red-600"
-              }`}
-            >
-              <svg
-                className="h-4 w-4"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                {stats.revenueChange >= 0 ? (
-                  <path
-                    clipRule="evenodd"
-                    d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm3.707-8.707l-3-3a1 1 0 0 0-1.414 0l-3 3a1 1 0 0 0 1.414 1.414L9 9.414V13a1 1 0 1 0 2 0V9.414l1.293 1.293a1 1 0 0 0 1.414-1.414z"
-                    fillRule="evenodd"
-                  />
-                ) : (
-                  <path d="M10 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16zm-3.707 7.707l3 3a1 1 0 0 0 1.414 0l3-3a1 1 0 0 0-1.414-1.414L11 10.586V7a1 1 0 1 0-2 0v3.586L7.707 8.293a1 1 0 0 0-1.414 1.414z" />
-                )}
-              </svg>
-              {Math.abs(stats.revenueChange).toFixed(1)}% from last month
-            </p>
-          </div>
-        </div>
+              <div className="card bg-white p-6 rounded-lg shadow-sm border border-[var(--border-color)]">
+                <p className="text-[var(--text-secondary)] text-sm font-medium">
+                  Revenue
+                </p>
+                <p className="text-[var(--text-primary)] text-3xl font-bold mt-2">
+                  ₹{stats.revenue}
+                </p>
+                <p
+                  className={`text-sm font-medium mt-1 flex items-center gap-1 ${stats.revenueChange >= 0 ? "text-teal-600" : "text-red-600"
+                    }`}
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    {stats.revenueChange >= 0 ? (
+                      <path
+                        clipRule="evenodd"
+                        d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm3.707-8.707l-3-3a1 1 0 0 0-1.414 0l-3 3a1 1 0 0 0 1.414 1.414L9 9.414V13a1 1 0 1 0 2 0V9.414l1.293 1.293a1 1 0 0 0 1.414-1.414z"
+                        fillRule="evenodd"
+                      />
+                    ) : (
+                      <path d="M10 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16zm-3.707 7.707l3 3a1 1 0 0 0 1.414 0l3-3a1 1 0 0 0-1.414-1.414L11 10.586V7a1 1 0 1 0-2 0v3.586L7.707 8.293a1 1 0 0 0-1.414 1.414z" />
+                    )}
+                  </svg>
+                  {Math.abs(stats.revenueChange).toFixed(1)}% from last month
+                </p>
+              </div>
+            </div>
 
-        {/* Recent Cases Table */}
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">
-            Recent Cases
-          </h2>
-          <div className="flex gap-4">
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="border rounded-md px-2 py-1 text-sm font-bold focus:ring outline-none"
-            >
-              {TIME_FILTERS.map((opt) => (
-                <option value={opt.value} key={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <button
-              className="inline-flex items-center justify-center rounded-md h-10 px-4 text-sm font-bold bg-[var(--primary-color)] text-white hover:bg-teal-900 transition-colors shadow-md"
-              onClick={() => navigate("/patient-form")}
-            >
-              Add Case
-            </button>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm border border-[var(--border-color)] overflow-x-auto">
-  <table className="w-full text-sm text-left text-[var(--text-secondary)] table-fixed overflow-x-auto">
-    <colgroup>
-      <col style={{ width: "20%" }} />
-      <col style={{ width: "20%" }} />
-      <col style={{ width: "20%" }} />
-      <col style={{ width: "20%" }} />
-      <col style={{ width: "20%" }} />
-    </colgroup>
-    <thead className="table-header bg-gray-50 text-xs text-[var(--text-primary)] uppercase">
-      <tr>
-        <th className="px-6 py-3">Case ID</th>
-        <th className="px-6 py-3">Patient Name</th>
-        <th className="px-6 py-3">Date</th>
-        <th className="px-6 py-3">Status</th>
-        <th className="px-6 py-3">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {filteredCases.length === 0 ? (
-        <tr>
-          <td className="px-6 py-4 text-center" colSpan={5}>
-            No cases found.
-          </td>
-        </tr>
-      ) : (
-        filteredCases.map(({ patientId, name, date, tests }) => {
-          let allTestItems = [];
-          if (Array.isArray(tests)) {
-            tests.forEach((group) => {
-              if (Array.isArray(group.testItems)) {
-                allTestItems = allTestItems.concat(group.testItems);
-              }
-            });
-          }
-          let status = "Completed";
-          if (
-            !allTestItems.length ||
-            allTestItems.some(
-              (t) => t.status === "Pending" || t.status === "In Progress"
-            )
-          ) {
-            status = "Pending";
-          }
-          const statusClass =
-            status === "Completed"
-              ? "bg-teal-100 text-teal-800"
-              : status === "Pending"
-              ? "bg-amber-100 text-amber-800"
-              : "bg-gray-200 text-gray-800";
-          return (
-            <tr
-              key={patientId}
-              className="bg-white border-b border-[var(--border-color)] hover:bg-gray-50"
-            >
-              <td className="px-6 py-4 max-w-0 whitespace-nowrap relative group">
-                <div className="truncate cursor-default">{patientId}</div>
-                <div
-                  className="absolute left-1/2 top-1/2 hidden max-w-xs -translate-x-1/2 -translate-y-full whitespace-normal rounded bg-gray-800 p-2 text-sm text-white shadow-lg group-hover:block z-50 pointer-events-none"
-                  style={{ whiteSpace: "normal" }}
+            {/* Recent Cases Table */}
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-lg md:text-xl font-bold text-[var(--text-primary)] mb-4">
+                Recent Cases
+              </h2>
+              <div className="flex gap-4">
+                <select
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  className="border rounded-md px-2 py-1 text-sm font-bold focus:ring outline-none"
                 >
-                  {patientId}
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap max-w-0 relative group">
-                <div className="truncate cursor-default">{name}</div>
-                <div
-                  className="absolute left-1/2 top-1/2 hidden max-w-xs -translate-x-1/2 -translate-y-full whitespace-normal rounded bg-gray-800 p-2 text-sm text-white shadow-lg group-hover:block z-50 pointer-events-none"
-                  style={{ whiteSpace: "normal" }}
-                >
-                  {name}
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap max-w-0 relative group">
-                <div className="truncate cursor-default">{date}</div>
-                <div
-                  className="absolute left-1/2 top-1/2 hidden max-w-xs -translate-x-1/2 -translate-y-full whitespace-normal rounded bg-gray-800 p-2 text-sm text-white shadow-lg group-hover:block z-50 pointer-events-none"
-                  style={{ whiteSpace: "normal" }}
-                >
-                  {date}
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span
-                  className={`inline-flex items-center justify-center rounded-full h-6 px-3 text-xs font-medium ${statusClass}`}
-                >
-                  {status}
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-normal max-w-0 truncate">
+                  {TIME_FILTERS.map((opt) => (
+                    <option value={opt.value} key={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
                 <button
-                  onClick={() =>
-                    navigate("/patients", {
-                      state: { patientId, fromDashboard: true },
-                    })
-                  }
-                  className="font-medium text-[var(--primary-color)] hover:underline cursor-pointer bg-transparent border-none p-0"
+                  className="inline-flex items-center justify-center rounded-md h-10 px-4 text-xs font-bold bg-[var(--primary-color)] text-white hover:bg-teal-900 transition-colors shadow-md"
+                  onClick={() => navigate("/patient-form")}
                 >
-                  View
+                  Add Case
                 </button>
-              </td>
-            </tr>
-          );
-        })
-      )}
-    </tbody>
-  </table>
-</div>
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm border border-[var(--border-color)] overflow-x-auto">
+              <table className="w-full text-sm text-left text-[var(--text-secondary)] table-fixed overflow-x-auto">
+                <colgroup>
+                  <col style={{ width: "20%" }} />
+                  <col style={{ width: "20%" }} />
+                  <col style={{ width: "20%" }} />
+                  <col style={{ width: "20%" }} />
+                  <col style={{ width: "20%" }} />
+                </colgroup>
+                <thead className="table-header bg-gray-50 text-xs text-[var(--text-primary)] uppercase">
+                  <tr>
+                    <th className="px-6 py-3">Case ID</th>
+                    <th className="px-6 py-3">Patient Name</th>
+                    <th className="px-6 py-3">Date</th>
+                    <th className="px-6 py-3">Status</th>
+                    <th className="px-6 py-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredCases.length === 0 ? (
+                    <tr>
+                      <td className="px-6 py-4 text-center" colSpan={5}>
+                        No cases found.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredCases.map(({ patientId, name, date, tests }) => {
+                      let allTestItems = [];
+                      if (Array.isArray(tests)) {
+                        tests.forEach((group) => {
+                          if (Array.isArray(group.testItems)) {
+                            allTestItems = allTestItems.concat(group.testItems);
+                          }
+                        });
+                      }
+                      let status = "Completed";
+                      if (
+                        !allTestItems.length ||
+                        allTestItems.some(
+                          (t) => t.status === "Pending" || t.status === "In Progress"
+                        )
+                      ) {
+                        status = "Pending";
+                      }
+                      const statusClass =
+                        status === "Completed"
+                          ? "bg-teal-100 text-teal-800"
+                          : status === "Pending"
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-gray-200 text-gray-800";
+                      return (
+                        <tr
+                          key={patientId}
+                          className="bg-white border-b border-[var(--border-color)] hover:bg-gray-50"
+                        >
+                          <td className="px-6 py-4 max-w-0 whitespace-nowrap relative group">
+                            <div className="truncate cursor-default">{patientId}</div>
+                            <div
+                              className="absolute left-1/2 top-1/2 hidden max-w-xs -translate-x-1/2 -translate-y-full whitespace-normal rounded bg-gray-800 p-2 text-sm text-white shadow-lg group-hover:block z-50 pointer-events-none"
+                              style={{ whiteSpace: "normal" }}
+                            >
+                              {patientId}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap max-w-0 relative group">
+                            <div className="truncate cursor-default">{name}</div>
+                            <div
+                              className="absolute left-1/2 top-1/2 hidden max-w-xs -translate-x-1/2 -translate-y-full whitespace-normal rounded bg-gray-800 p-2 text-sm text-white shadow-lg group-hover:block z-50 pointer-events-none"
+                              style={{ whiteSpace: "normal" }}
+                            >
+                              {name}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap max-w-0 relative group">
+                            <div className="truncate cursor-default">{date}</div>
+                            <div
+                              className="absolute left-1/2 top-1/2 hidden max-w-xs -translate-x-1/2 -translate-y-full whitespace-normal rounded bg-gray-800 p-2 text-sm text-white shadow-lg group-hover:block z-50 pointer-events-none"
+                              style={{ whiteSpace: "normal" }}
+                            >
+                              {date}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center justify-center rounded-full h-6 px-3 text-xs font-medium ${statusClass}`}
+                            >
+                              {status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-normal max-w-0 truncate">
+                            <button
+                              onClick={() =>
+                                navigate("/patients", {
+                                  state: { patientId, fromDashboard: true },
+                                })
+                              }
+                              className="font-medium text-[var(--primary-color)] hover:underline cursor-pointer bg-transparent border-none p-0"
+                            >
+                              View
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </main>
     </div>
   );
