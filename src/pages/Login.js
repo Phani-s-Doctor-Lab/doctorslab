@@ -70,7 +70,7 @@ const PathologyLogin = () => {
       <div className="absolute top-8 left-8">
         <a className="flex items-center gap-3 text-[var(--text-primary)]" href="#">
           {/* svg logo here */}
-          <h1 className="text-xl font-bold tracking-tight">Pathology Services Co.</h1>
+          <h1 className="text-xl font-bold tracking-tight">Phani's Doctor Laboratories & Diagnostics.</h1>
         </a>
       </div>
 

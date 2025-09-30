@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const handleLogout = () => {
     // Clear user data stored in localStorage
     localStorage.clear(); // Clears all keys in localStorage (or use removeItem for specific keys)
@@ -17,7 +17,9 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="h-full" style={{
+    <div
+      className="h-full"
+      style={{
         "--primary-color": "#008080",
         "--primary-light": "#e0f2f1",
         "--text-primary": "#111827",
@@ -25,35 +27,27 @@ export default function Sidebar() {
         "--background-color": "#f8f9fa",
         "--border-color": "#D3D3D3",
         fontFamily: "'Public Sans', sans-serif",
-      }}>
+      }}
+    >
       <aside className="w-full md:w-64 h-full flex-shrink-0 sidebar p-4 flex flex-col justify-between bg-white border-r border-[var(--border-color)]">
         <div className="flex flex-col gap-8">
-            <div>
-                {/* Logo and Title */}
-                <div className="flex items-center gap-2 px-3">
-                    <svg
-                    className="h-8 w-8 text-[var(--primary-color)]"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                    >
-                    <path
-                        d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    ></path>
-                    </svg>
-                    <h1 className="text-xl font-bold text-[var(--text-primary)]">
-                    Pathology Co.
-                    </h1>
-                </div>
+          <div>
+            {/* Logo and Title */}
+            <div className="flex items-center gap-2 px-3">
+              <img src="/logo.jpg" alt="Logo" className="w-10 h-10" />
+              <h1 className="text-xl font-bold text-[var(--text-primary)]">
+                Phani's Doctor Laboratories
+              </h1>
             </div>
+          </div>
 
           <nav className="flex flex-col gap-2">
             <p
-              className={`sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer ${location.pathname === "/dashboard" ? "bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active" : ""}`}
+              className={`sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer ${
+                location.pathname === "/dashboard"
+                  ? "bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active"
+                  : ""
+              }`}
               onClick={() => navigate("/dashboard")}
             >
               <svg
@@ -67,192 +61,218 @@ export default function Sidebar() {
               <span>Dashboard</span>
             </p>
             <p
-              className={`sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer ${location.pathname === "/patients" ? "bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active" : ""}`}
+              className={`sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer ${
+                location.pathname === "/patients"
+                  ? "bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active"
+                  : ""
+              }`}
               onClick={() => navigate("/patients")}
             >
               <svg
-                data-icon="Users"
-                viewBox="0 0 512 512"
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 32 32"
                 fill="currentColor"
-                className="w-6 h-6"
+                style={{
+                  fillRule: "evenodd",
+                  clipRule: "evenodd",
+                  strokeLinejoin: "round",
+                  strokeMiterlimit: 2,
+                }}
               >
-                <g>
-                  <g>
-                    <path
-                      d="M180.033,198.373c-18.581,0-33.698,15.117-33.698,33.698c0,18.581,15.117,33.698,33.698,33.698
-                            s33.698-15.117,33.698-33.698S198.614,198.373,180.033,198.373z M180.033,248.92c-9.29,0-16.849-7.557-16.849-16.849
-                            c0-9.29,7.558-16.849,16.849-16.849s16.849,7.558,16.849,16.849C196.882,241.361,189.324,248.92,180.033,248.92z"
-                    />
-                  </g>
-                </g>
-                <g>
-                  <g>
-                    <path
-                      d="M322.32,198.373c-18.581,0-33.698,15.117-33.698,33.698c0,18.581,15.117,33.698,33.698,33.698
-                            s33.698-15.117,33.698-33.698S340.901,198.373,322.32,198.373z M322.32,248.92c-9.29,0-16.849-7.557-16.849-16.849
-                            c0-9.29,7.558-16.849,16.849-16.849s16.849,7.558,16.849,16.849C339.169,241.361,331.61,248.92,322.32,248.92z"
-                    />
-                  </g>
-                </g>
-                <g>
-                  <g>
-                    <path
-                      d="M511.977,197.558c-0.371-11.604-5.238-22.371-13.705-30.313c-8.467-7.944-19.516-12.117-31.125-11.745
-                            c-11.604,0.37-22.371,5.237-30.37,13.765L419.823,187.7c-7.265-21.564-18.007-42.069-31.667-60.362
-                            c16.002-7.06,27.204-23.068,27.204-41.651c0-25.092-20.414-45.507-45.507-45.507H69.958c-25.092,0-45.507,20.415-45.507,45.507
-                            c0,25.093,20.414,45.508,45.507,45.508h299.834c16.896,20.825,29.558,45.16,36.85,70.834l-92.697,100.788
-                            c-1.072,1.165-1.793,2.607-2.083,4.162l-6.461,34.733c-0.024,0.125-0.044,0.249-0.061,0.374l-1.966,14.053
-                            c-13.378-3.98-28.962-6.159-45.432-6.159c-29.978,0-58.917,8.002-75.519,20.883c-3.676,2.852-4.345,8.144-1.493,11.82
-                            c1.66,2.14,4.148,3.26,6.662,3.26c1.804,0,3.622-0.577,5.158-1.768c13.792-10.699,38.772-17.346,65.192-17.346
-                            c18.214,0,35.34,2.972,48.466,8.131c0.481,0.25,0.984,0.454,1.503,0.608c5.759,2.394,10.691,5.222,14.519,8.419
-                            c3.571,2.982,8.884,2.504,11.866-1.067c2.454-2.94,2.56-7.054,0.531-10.082l2.246-0.289c0.245-0.031,0.489-0.074,0.73-0.127
-                            l35.254-7.72c1.69-0.37,3.227-1.252,4.399-2.526l16.059-17.461c-32.957,66.516-101.301,110.258-178.013,110.258
-                            c-109.539-0.001-198.656-89.118-198.656-198.658c0-16.941,2.134-33.764,6.343-50c1.167-4.504-1.538-9.102-6.041-10.269
-                            c-4.504-1.17-9.102,1.535-10.269,6.041C2.316,219.705,0,237.95,0,256.315c0,118.83,96.675,215.506,215.506,215.506
-                            c97.901,0,183.23-65.692,208.28-160.016l76.447-83.121C508.178,220.217,512.348,209.162,511.977,197.558z M69.958,114.345
-                            c-15.802,0-28.657-12.858-28.657-28.66s12.856-28.659,28.659-28.659h299.893c15.802,0,28.659,12.856,28.659,28.659
-                            c0,15.803-12.856,28.66-28.659,28.66H69.958z M487.888,217.217L366.858,348.81l-32.293,7.072l-1.698,0.218l134.778-143.661
-                            c3.183-3.393,3.014-8.725-0.38-11.909s-8.725-3.015-11.908,0.38l-132.993,141.76l5.623-30.23l94.186-102.406
-                            c0.064-0.07,0.129-0.137,0.191-0.208l26.758-29.093c4.865-5.185,11.457-8.166,18.563-8.393c7.119-0.219,13.875,2.327,19.06,7.192
-                            s8.166,11.457,8.393,18.563C495.365,205.201,492.81,211.97,487.888,217.217z"
-                    />
-                  </g>
-                </g>
-                <g>
-                  <g>
-                    <circle cx="25.302" cy="174.07" r="8.424" />
-                  </g>
-                </g>
+                <path d="M9.731,14.075c-1.387,0.252 -2.676,0.921 -3.687,1.932c-1.309,1.309 -2.044,3.084 -2.044,4.935l0,4.039c0,1.657 1.343,3 3,3c4.184,-0 13.816,-0 18,-0c1.657,-0 3,-1.343 3,-3l0,-4.039c0,-1.851 -0.735,-3.626 -2.044,-4.935c-1.011,-1.011 -2.3,-1.68 -3.687,-1.932c0.468,-0.939 0.731,-1.997 0.731,-3.117c0,-3.863 -3.137,-7 -7,-7c-3.863,0 -7,3.137 -7,7c0,1.12 0.263,2.178 0.731,3.117Zm11.169,1.88c-1.262,1.239 -2.993,2.003 -4.9,2.003c-1.907,0 -3.638,-0.764 -4.9,-2.003c-0.04,0.005 -0.08,0.007 -0.12,0.007c-1.321,0 -2.588,0.525 -3.521,1.459c-0.934,0.934 -1.459,2.201 -1.459,3.521c0,0 0,4.039 0,4.039c0,0.552 0.448,1 1,1l18,-0c0.552,-0 1,-0.448 1,-1c-0,-0 0,-4.039 0,-4.039c0,-1.32 -0.525,-2.587 -1.459,-3.521c-0.933,-0.934 -2.2,-1.459 -3.521,-1.459c-0.04,0 -0.08,-0.002 -0.12,-0.007Zm-4.9,-9.997c2.76,0 5,2.241 5,5c0,2.76 -2.24,5 -5,5c-2.76,0 -5,-2.24 -5,-5c0,-2.759 2.24,-5 5,-5Z" />
+                <path d="M20,20.008l-1,-0c-0.552,-0 -1,0.448 -1,1c-0,0.552 0.448,1 1,1l1,-0l0,1c-0,0.552 0.448,1 1,1c0.552,-0 1,-0.448 1,-1l0,-1l1,-0c0.552,-0 1,-0.448 1,-1c-0,-0.552 -0.448,-1 -1,-1l-1,-0l0,-1c-0,-0.552 -0.448,-1 -1,-1c-0.552,-0 -1,0.448 -1,1l0,1Z" />
               </svg>
 
               <span>Patients</span>
             </p>
             {/* Add Test */}
             {location.pathname === "/patient-form" && (
-                <p className="sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active">
-                    <svg
-                        data-icon="Add"
-                        viewBox="0 0 52 52"
-                        fill="currentColor"
-                        className="w-6 h-6"
-                    >
-                        <path d="M43,9C33.6-0.3,18.4-0.3,9,9c-9.3,9.4-9.3,24.6,0,34c9.4,9.4,24.6,9.4,33.9,0C52.3,33.6,52.3,18.4,43,9z
+              <p className="sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active">
+                <svg
+                  data-icon="Add"
+                  viewBox="0 0 52 52"
+                  fill="currentColor"
+                  className="w-6 h-6"
+                >
+                  <path
+                    d="M43,9C33.6-0.3,18.4-0.3,9,9c-9.3,9.4-9.3,24.6,0,34c9.4,9.4,24.6,9.4,33.9,0C52.3,33.6,52.3,18.4,43,9z
                           M42,28c0,0.6-0.4,1-1,1H30c-0.5,0-1,0.5-1,1v11c0,0.5-0.5,1-1,1h-4c-0.6,0-1-0.4-1-1V30c0-0.6-0.4-1-1-1H11c-0.6,0-1-0.4-1-1v-4
                           c0-0.5,0.5-1,1-1h11c0.6,0,1-0.4,1-1V11c0-0.5,0.5-1,1-1h4c0.5,0,1,0.4,1,1v11c0,0.6,0.4,1,1,1h11c0.5,0,1,0.5,1,1V28z"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          />
-                    </svg>
-                    <span>Add Patient</span>
-                </p>
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <span>Add Patient</span>
+              </p>
             )}
-            <p className={`sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer  ${location.pathname === "/inventory" ? "bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active" : ""}`} onClick={() => navigate("/inventory")}>
+            <p
+              className={`sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer  ${
+                location.pathname === "/inventory"
+                  ? "bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active"
+                  : ""
+              }`}
+              onClick={() => navigate("/inventory")}
+            >
               <svg
-                data-icon="Inventory"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="w-6 h-6"
-              >
-                <path
-                  d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M9 7h6M9 11h6M9 15h6M9 19h6M9 23h6"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+  style={{ fillRule: 'evenodd', clipRule: 'evenodd' }}
+>
+  <g clipPath="url(#clip0)">
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M1 0C1.55228 0 2 0.447715 2 1V8H5C4.44772 8 4 7.55228 4 7V5C4 4.44772 4.44772 4 5 4H9C9.55228 4 10 4.44772 10 5V7C10 7.55228 9.55228 8 9 8H13C12.4477 8 12 7.55228 12 7V3C12 2.44772 12.4477 2 13 2H19C19.5523 2 20 2.44772 20 3V7C20 7.55228 19.5523 8 19 8H22V1C22 0.447715 22.4477 0 23 0C23.5523 0 24 0.447715 24 1V23C24 23.5523 23.5523 24 23 24C22.4477 24 22 23.5523 22 23V22H2V23C2 23.5523 1.55228 24 1 24C0.447715 24 0 23.5523 0 23V1C0 0.447715 0.447715 0 1 0ZM22 20H19C19.5523 20 20 19.5523 20 19V15C20 14.4477 19.5523 14 19 14H14C13.4477 14 13 14.4477 13 15V19C13 19.5523 13.4477 20 14 20H10C10.5523 20 11 19.5523 11 19V13C11 12.4477 10.5523 12 10 12H5C4.44772 12 4 12.4477 4 13V19C4 19.5523 4.44772 20 5 20H2V10H22V20Z"
+      fill="currentColor"
+    />
+  </g>
+  <defs>
+    <clipPath id="clip0">
+      <rect width="24" height="24" fill="white" />
+    </clipPath>
+  </defs>
+</svg>
+
               <span>Inventory</span>
             </p>
 
             <p
-              className={`sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer ${location.pathname === "/tests" ? "bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active" : ""}`}
+              className={`sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer ${
+                location.pathname === "/tests"
+                  ? "bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active"
+                  : ""
+              }`}
               onClick={() => navigate("/tests")}
             >
               <svg
-                data-icon="Tests"
-                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 490 490"
                 fill="currentColor"
-                className="w-6 h-6"
+                style={{ enableBackground: "new 0 0 490 490" }}
               >
-                <path
-                  d="M6 21v-2a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v2"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M9 8a3 3 0 1 1 6 0v10"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M15 8h4"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
+                <g>
+                  <g>
+                    <g>
+                      <path
+                        d="M357.071,87.929l-85-85c-1.912-1.912-4.47-2.904-7.071-2.905V0H10C4.477,0,0,4.477,0,10v470c0,5.523,4.477,10,10,10h340
+          c5.523,0,10-4.477,10-10V95h-0.024C359.975,92.399,358.983,89.841,357.071,87.929z M275,34.142L325.858,85H275V34.142z M340,470
+          H20V20h235v75c0,5.523,4.477,10,10,10h75V470z"
+                      />
+                      <path
+                        d="M470,235v155h-15V120h-0.012c0-1.302-0.242-2.609-0.757-3.846l-25-60C427.678,52.427,424.037,50,420,50
+          s-7.678,2.427-9.231,6.154l-25,60c-0.515,1.237-0.757,2.544-0.757,3.846H385v360c0,5.523,4.477,10,10,10h50
+          c5.523,0,10-4.477,10-10v-70h25c5.523,0,10-4.477,10-10V235H470z M420,86l10,24h-20L420,86z M435,470h-30v-60h30V470z M435,390
+          h-30V130h30V390z"
+                      />
+                      <path
+                        d="M125,135H75c-5.523,0-10,4.477-10,10v50c0,5.523,4.477,10,10,10h50c5.523,0,10-4.477,10-10v-50
+          C135,139.477,130.523,135,125,135z M115,185H85v-30h30V185z"
+                      />
+                      <path
+                        d="M125,245H75c-5.523,0-10,4.477-10,10v50c0,5.523,4.477,10,10,10h50c5.523,0,10-4.477,10-10v-50
+          C135,249.477,130.523,245,125,245z M115,295H85v-30h30V295z"
+                      />
+                      <path
+                        d="M125,355H75c-5.523,0-10,4.477-10,10v50c0,5.523,4.477,10,10,10h50c5.523,0,10-4.477,10-10v-50
+          C135,359.477,130.523,355,125,355z M115,405H85v-30h30V405z"
+                      />
+                      <rect x="150" y="140" width="50" height="20" />
+                      <rect x="150" y="180" width="135" height="20" />
+                      <rect x="150" y="250" width="50" height="20" />
+                      <rect x="150" y="290" width="135" height="20" />
+                      <rect x="150" y="360" width="50" height="20" />
+                      <rect x="150" y="400" width="135" height="20" />
+                    </g>
+                  </g>
+                </g>
               </svg>
+
               <span>Tests</span>
             </p>
             {/* Add Test */}
             {location.pathname === "/add-test" && (
-                <p className="sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active">
-                    <svg
-                        data-icon="Add"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        className="w-6 h-6"
-                    >
-                        <path
-                            d="M12 4v16m8-8H4"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                        />
-                    </svg>
-                    <span>Add Test</span>
-                </p>
+              <p className="sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active">
+                <svg
+                  data-icon="Add"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="w-6 h-6"
+                >
+                  <path
+                    d="M12 4v16m8-8H4"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <span>Add Test</span>
+              </p>
             )}
             {/* View Test */}
             {location.pathname.startsWith("/view-test/") && (
-                <p className="sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active">
-                    <svg
-                        data-icon="View"
-                        viewBox="0 0 64 64"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={5}
-                        className="w-6 h-6"
-                    >
-                        <path d="M53.79,33.1a.51.51,0,0,0,0-.4C52.83,30.89,45.29,17.17,32,16.84S11,30.61,9.92,32.65a.48.48,0,0,0,0,.48C11.1,35.06,19.35,48.05,29.68,49,41.07,50,50.31,42,53.79,33.1Z"/><circle cx="31.7" cy="32.76" r="6.91"/>
-                    </svg>
-                    <span>View Test</span>
-                </p>
+              <p className="sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active">
+                <svg
+                  data-icon="View"
+                  viewBox="0 0 64 64"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={5}
+                  className="w-6 h-6"
+                >
+                  <path d="M53.79,33.1a.51.51,0,0,0,0-.4C52.83,30.89,45.29,17.17,32,16.84S11,30.61,9.92,32.65a.48.48,0,0,0,0,.48C11.1,35.06,19.35,48.05,29.68,49,41.07,50,50.31,42,53.79,33.1Z" />
+                  <circle cx="31.7" cy="32.76" r="6.91" />
+                </svg>
+                <span>View Test</span>
+              </p>
+            )}
+            {/* View Package */}
+            {location.pathname.startsWith("/view-package/") && (
+              <p className="sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active">
+                <svg
+                  data-icon="View"
+                  viewBox="0 0 64 64"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={5}
+                  className="w-6 h-6"
+                >
+                  <path d="M53.79,33.1a.51.51,0,0,0,0-.4C52.83,30.89,45.29,17.17,32,16.84S11,30.61,9.92,32.65a.48.48,0,0,0,0,.48C11.1,35.06,19.35,48.05,29.68,49,41.07,50,50.31,42,53.79,33.1Z" />
+                  <circle cx="31.7" cy="32.76" r="6.91" />
+                </svg>
+                <span>View Package</span>
+              </p>
             )}
             {/* Edit Test */}
             {location.pathname.startsWith("/edit-test/") && (
-                <p className="sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active">
-                    <svg
-                        data-icon="Edit"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        className="w-6 h-6"
-                    >
-                        <path d="M21,12a1,1,0,0,0-1,1v6a1,1,0,0,1-1,1H5a1,1,0,0,1-1-1V5A1,1,0,0,1,5,4h6a1,1,0,0,0,0-2H5A3,3,0,0,0,2,5V19a3,3,0,0,0,3,3H19a3,3,0,0,0,3-3V13A1,1,0,0,0,21,12ZM6,12.76V17a1,1,0,0,0,1,1h4.24a1,1,0,0,0,.71-.29l6.92-6.93h0L21.71,8a1,1,0,0,0,0-1.42L17.47,2.29a1,1,0,0,0-1.42,0L13.23,5.12h0L6.29,12.05A1,1,0,0,0,6,12.76ZM16.76,4.41l2.83,2.83L18.17,8.66,15.34,5.83ZM8,13.17l5.93-5.93,2.83,2.83L10.83,16H8Z" stroke="currentColor"
-                        />
-                    </svg>
-                    <span>Edit Test</span>
-                </p>
+              <p className="sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active">
+                <svg
+                  data-icon="Edit"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="w-6 h-6"
+                >
+                  <path
+                    d="M21,12a1,1,0,0,0-1,1v6a1,1,0,0,1-1,1H5a1,1,0,0,1-1-1V5A1,1,0,0,1,5,4h6a1,1,0,0,0,0-2H5A3,3,0,0,0,2,5V19a3,3,0,0,0,3,3H19a3,3,0,0,0,3-3V13A1,1,0,0,0,21,12ZM6,12.76V17a1,1,0,0,0,1,1h4.24a1,1,0,0,0,.71-.29l6.92-6.93h0L21.71,8a1,1,0,0,0,0-1.42L17.47,2.29a1,1,0,0,0-1.42,0L13.23,5.12h0L6.29,12.05A1,1,0,0,0,6,12.76ZM16.76,4.41l2.83,2.83L18.17,8.66,15.34,5.83ZM8,13.17l5.93-5.93,2.83,2.83L10.83,16H8Z"
+                    stroke="currentColor"
+                  />
+                </svg>
+                <span>Edit Test</span>
+              </p>
             )}
             <p
-              className={`sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer ${location.pathname === "/staff" ? "bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active" : ""}`}
+              className={`sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer ${
+                location.pathname === "/staff"
+                  ? "bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active"
+                  : ""
+              }`}
               onClick={() => navigate("/staff")}
             >
               <svg
@@ -270,7 +290,12 @@ export default function Sidebar() {
               </svg>
               <span>Staff</span>
             </p>
-            <p className={`sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer ${location.pathname === "/reports" ? "bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active" : ""}`}
+            <p
+              className={`sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer ${
+                location.pathname === "/reports"
+                  ? "bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active"
+                  : ""
+              }`}
               onClick={() => navigate("/reports")}
             >
               <svg
@@ -285,10 +310,14 @@ export default function Sidebar() {
                   clip-rule="evenodd"
                 />
               </svg>
-              <span>Reports</span>
+              <span>Statistics</span>
             </p>
             <p
-              className={`sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer ${location.pathname === "/settings" ? "bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active" : ""}`}
+              className={`sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer ${
+                location.pathname === "/settings"
+                  ? "bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active"
+                  : ""
+              }`}
               onClick={() => navigate("/settings")}
             >
               <svg

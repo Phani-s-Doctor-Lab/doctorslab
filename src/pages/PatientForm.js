@@ -12,9 +12,16 @@ const getCurrentDate = () => {
 
 const getCurrentTime = () => {
   const date = new Date();
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  return `${hours}:${minutes}`;
+  let hours = date.getHours();
+  const minutes = date.getMinutes();
+  const seconds = date.getSeconds();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12; // hour '0' should be '12'
+  const strHours = hours.toString().padStart(2, '0');
+  const strMinutes = minutes.toString().padStart(2, '0');
+  const strSeconds = seconds.toString().padStart(2, '0');
+  return `${strHours}:${strMinutes}:${strSeconds} ${ampm}`;
 };
 
 const defaultFormData = {
@@ -61,15 +68,19 @@ const PatientForm = () => {
   const [tests, setTests] = useState([]);
   const [total, setTotal] = useState(0);
   const [testSearchTerm, setTestSearchTerm] = useState("");
+  const [packageSearchTerm, setPackageSearchTerm] = useState("");
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [pendingSubmit, setPendingSubmit] = useState(false); // To prevent double submits
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [amountPaid, setAmountPaid] = useState(0);
   const [paymentMode, setPaymentMode] = useState("UPI");
+  const [packages, setPackages] = useState([]);
+  const [activeTab, setActiveTab] = useState("tests");
 
   // New state for responsive design and loading
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLoadingTests, setIsLoadingTests] = useState(false);
+  const [isLoadingPackages, setIsLoadingPackages] = useState(false);
   const [isLoadingDoctors, setIsLoadingDoctors] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -106,6 +117,25 @@ const PatientForm = () => {
     };
     fetchTests();
   }, []);
+
+  useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/packages");
+        const data = await res.json();
+        if (res.ok) {
+          setPackages(data.packages || []);
+        } else {
+          alert("Failed to load packages");
+        }
+      } catch (error) {
+        console.error("Error fetching packages:", error);
+      }
+    };
+    fetchPackages();
+  }, []);
+
+  const isPackageItem = (item) => item.isPackage === true;
 
   // Rehydrate state if coming back from Add Test
   useEffect(() => {
@@ -155,13 +185,6 @@ const PatientForm = () => {
     setTotal(totalPrice - discountValue);
   }, [selectedTests, formData.discount]);
 
-  // Recalculate total whenever tests or discount changes
-  useEffect(() => {
-    const totalPrice = selectedTests.reduce((sum, t) => sum + Number(t.price), 0);
-    const discountValue = Number(formData.discount) || 0;
-    setTotal(totalPrice - discountValue);
-  }, [selectedTests, formData.discount]);
-
   // Handle input change
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -198,6 +221,11 @@ const PatientForm = () => {
     return tests.filter((t) => t.testName.toLowerCase().includes(testSearchTerm.toLowerCase()));
   }, [testSearchTerm, tests]);
 
+  const filteredPackages = React.useMemo(() => {
+    if (!packageSearchTerm.trim()) return packages;
+    return packages.filter((p) => p.name.toLowerCase().includes(packageSearchTerm.toLowerCase()));
+  }, [packageSearchTerm, packages]);
+
   const getTestId = (test) => test.id || test._id || test.testId;
 
   const handleTestToggle = (test) => {
@@ -207,6 +235,29 @@ const PatientForm = () => {
         return prev.filter((t) => getTestId(t) !== testId);
       } else {
         return [...prev, test];
+      }
+    });
+  };
+
+  // Extract all tests inside selected packages
+  const selectedPackageTestIds = new Set(
+    selectedTests
+      .filter(item => item.isPackage)
+      .flatMap(pkg => pkg.tests.map(t => getTestId(t)))
+  );
+
+  // Use this to disable tests that are part of selected packages
+  const isTestDisabled = test => selectedPackageTestIds.has(getTestId(test));
+
+  const handleItemToggle = (item) => {
+    const itemId = getTestId(item);
+    setSelectedTests((prev) => {
+      if (prev.find(t => getTestId(t) === itemId)) {
+        // Remove
+        return prev.filter(t => getTestId(t) !== itemId);
+      } else {
+        // Add
+        return [...prev, item];
       }
     });
   };
@@ -501,122 +552,266 @@ const PatientForm = () => {
               </div>
 
               <div className="mt-6 sm:mt-10">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg sm:text-xl font-bold">Select Tests</h3>
-                  {isLoadingTests && <LoadingSpinner />}
-                </div>
+                <>
+                  <div className="flex border-b border-gray-300 mb-4">
+                    <button
+                      type="button"
+                      className={`px-4 py-2 font-semibold ${activeTab === "tests" ? "border-b-2 border-brand-color" : ""}`}
+                      onClick={() => setActiveTab("tests")}
+                    >
+                      Tests
+                    </button>
+                    <button
+                      type="button"
+                      className={`px-4 py-2 font-semibold ${activeTab === "packages" ? "border-b-2 border-brand-color" : ""}`}
+                      onClick={() => setActiveTab("packages")}
+                    >
+                      Packages
+                    </button>
+                  </div>
 
-                <input
-                  type="text"
-                  placeholder="Search tests..."
-                  className="w-full border border-[var(--border-color)] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:border-[var(--border-color)] mb-2"
-                  value={testSearchTerm}
-                  onChange={(e) => setTestSearchTerm(e.target.value)}
-                />
-
-                {/* Mobile Card View */}
-                <div className="block sm:hidden space-y-4">
-                  {isLoadingTests ? (
-                    <div className="flex justify-center py-8">
-                      <LoadingSpinner size="w-8 h-8" />
-                    </div>
-                  ) : filteredTests.length > 0 ? (
-                    filteredTests.map((test, idx) => (
-                      <div key={idx} className="border border-[var(--border-color)] rounded-lg p-4 bg-[var(--surface-color)]">
-                        <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-medium text-[var(--text-primary)] text-sm leading-tight">
-                            {test.testName}
-                          </h4>
-                          <input
-                            type="checkbox"
-                            className="h-4 w-4 ml-2 rounded border-gray-300 text-[var(--brand-color)] focus:ring-[var(--brand-color)] flex-shrink-0"
-                            checked={selectedTests.some((t) => getTestId(t) === getTestId(test))}
-                            onChange={() => handleTestToggle(test)}
-                          />
-                        </div>
-                        <p className="text-sm text-[var(--text-secondary)] mb-2">
-                          {test.description || "No description available"}
-                        </p>
-                        <p className="text-sm font-semibold text-[var(--text-primary)]">
-                          {test.price ? `₹${test.price}` : "Price not available"}
-                        </p>
+                  {activeTab === "tests" && (
+                    <>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg sm:text-xl font-bold">Select Tests</h3>
+                        {isLoadingTests && <LoadingSpinner />}
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8 text-[var(--text-secondary)]">
-                      No tests available
-                    </div>
-                  )}
-                </div>
 
-                {/* Desktop Table View */}
-                <div className="hidden sm:block w-full overflow-x-auto rounded-lg border border-[var(--border-color)]">
-                  <table className="w-full divide-y divide-[var(--border-color)]">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="w-2/5 px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
-                          Test Name
-                        </th>
-                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
-                          Description
-                        </th>
-                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
-                          Price
-                        </th>
-                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
-                          Select
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[var(--border-color)] bg-[var(--surface-color)]">
-                      {isLoadingTests ? (
-                        <tr>
-                          <td colSpan="4" className="px-4 lg:px-6 py-8 text-center">
-                            <LoadingSpinner size="w-8 h-8" className="mx-auto" />
-                          </td>
-                        </tr>
-                      ) : filteredTests.length > 0 ? (
-                        filteredTests.map((test, idx) => (
-                          <tr key={idx}>
-                            <td className="px-4 lg:px-6 py-4 text-sm font-medium text-[var(--text-primary)] whitespace-normal break-words max-w-xs">
-                              {test.testName}
-                            </td>
-                            <td className="px-4 lg:px-6 py-4 text-sm text-[var(--text-secondary)] whitespace-normal break-words max-w-sm">
-                              {test.description || "--"}
-                            </td>
-                            <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">
-                              {test.price ? `₹${test.price}` : "--"}
-                            </td>
-                            <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm">
-                              <input
-                                type="checkbox"
-                                className="h-4 w-4 rounded border-gray-300 text-[var(--brand-color)] focus:ring-[var(--brand-color)]"
-                                checked={selectedTests.some((t) => getTestId(t) === getTestId(test))}
-                                onChange={() => handleTestToggle(test)}
-                              />
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan="4" className="px-4 lg:px-6 py-4 text-sm text-center text-[var(--text-secondary)]">
+                      <input
+                        type="text"
+                        placeholder="Search tests..."
+                        className="w-full border border-[var(--border-color)] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:border-[var(--border-color)] mb-2"
+                        value={testSearchTerm}
+                        onChange={(e) => setTestSearchTerm(e.target.value)}
+                      />
+
+                      {/* Mobile Card View */}
+                      <div className="block sm:hidden space-y-4">
+                        {isLoadingTests ? (
+                          <div className="flex justify-center py-8">
+                            <LoadingSpinner size="w-8 h-8" />
+                          </div>
+                        ) : filteredTests.length > 0 ? (
+                          filteredTests.map((test, idx) => (
+                            <div key={idx} className="border border-[var(--border-color)] rounded-lg p-4 bg-[var(--surface-color)]">
+                              <div className="flex items-start justify-between mb-2">
+                                <h4 className="font-medium text-[var(--text-primary)] text-sm leading-tight">
+                                  {test.testName}
+                                </h4>
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4 ml-2 rounded border-gray-300 text-[var(--brand-color)] focus:ring-[var(--brand-color)] flex-shrink-0"
+                                  checked={selectedTests.some((t) => getTestId(t) === getTestId(test))}
+                                  disabled={isTestDisabled(test)}
+                                  onChange={() => handleItemToggle(test)}
+                                />
+                              </div>
+                              <p className="text-sm text-[var(--text-secondary)] mb-2">
+                                {test.description || "No description available"}
+                              </p>
+                              <p className="text-sm font-semibold text-[var(--text-primary)]">
+                                {test.price ? `₹${test.price}` : "Price not available"}
+                              </p>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-8 text-[var(--text-secondary)]">
                             No tests available
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                          </div>
+                        )}
+                      </div>
 
-                <div className="mt-4 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={handleAddTestClick}
-                    className="flex items-center gap-2 rounded-md border border-[var(--border-color)] bg-[var(--background-color)] px-3 sm:px-4 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--border-color)] transition-colors"
-                  >
-                    <span className="text-sm sm:text-base">Add Test</span>
-                  </button>
-                </div>
+                      {/* Desktop Table View */}
+                      <div className="hidden sm:block w-full overflow-x-auto rounded-lg border border-[var(--border-color)]">
+                        <table className="w-full divide-y divide-[var(--border-color)]">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="w-2/5 px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+                                Test Name
+                              </th>
+                              <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+                                Description
+                              </th>
+                              <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+                                Price
+                              </th>
+                              <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+                                Select
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[var(--border-color)] bg-[var(--surface-color)]">
+                            {isLoadingTests ? (
+                              <tr>
+                                <td colSpan="4" className="px-4 lg:px-6 py-8 text-center">
+                                  <LoadingSpinner size="w-8 h-8" className="mx-auto" />
+                                </td>
+                              </tr>
+                            ) : filteredTests.length > 0 ? (
+                              filteredTests.map((test, idx) => (
+                                <tr key={idx}>
+                                  <td className="px-4 lg:px-6 py-4 text-sm font-medium text-[var(--text-primary)] whitespace-normal break-words max-w-xs">
+                                    {test.testName}
+                                  </td>
+                                  <td className="px-4 lg:px-6 py-4 text-sm text-[var(--text-secondary)] whitespace-normal break-words max-w-sm">
+                                    {test.description || "--"}
+                                  </td>
+                                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">
+                                    {test.price ? `₹${test.price}` : "--"}
+                                  </td>
+                                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm">
+                                    <input
+                                      type="checkbox"
+                                      className="h-4 w-4 rounded border-gray-300 text-[var(--brand-color)] focus:ring-[var(--brand-color)]"
+                                      checked={selectedTests.some((t) => getTestId(t) === getTestId(test))}
+                                      disabled={isTestDisabled(test)}
+                                      onChange={() => handleItemToggle(test)}
+                                    />
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan="4" className="px-4 lg:px-6 py-4 text-sm text-center text-[var(--text-secondary)]">
+                                  No tests available
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div className="mt-4 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={handleAddTestClick}
+                          className="flex items-center gap-2 rounded-md border border-[var(--border-color)] bg-[var(--background-color)] px-3 sm:px-4 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--border-color)] transition-colors"
+                        >
+                          <span className="text-sm sm:text-base">Add Test</span>
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {activeTab === "packages" && (
+                    <>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg sm:text-xl font-bold">Select Packages</h3>
+                        {isLoadingPackages && <LoadingSpinner />}
+                      </div>
+
+                      <input
+                        type="text"
+                        placeholder="Search tests..."
+                        className="w-full border border-[var(--border-color)] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:border-[var(--border-color)] mb-2"
+                        value={packageSearchTerm}
+                        onChange={(e) => setPackageSearchTerm(e.target.value)}
+                      />
+
+                      {/* Mobile Card View */}
+                      <div className="block sm:hidden space-y-4">
+                        {isLoadingPackages ? (
+                          <div className="flex justify-center py-8">
+                            <LoadingSpinner size="w-8 h-8" />
+                          </div>
+                        ) : filteredPackages.length > 0 ? (
+                          filteredPackages.map((pkg, idx) => (
+                            <div key={idx} className="border border-[var(--border-color)] rounded-lg p-4 bg-[var(--surface-color)]">
+                              <div className="flex items-start justify-between mb-2">
+                                <h4 className="font-medium text-[var(--text-primary)] text-sm leading-tight">
+                                  {pkg.name}
+                                </h4>
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4 ml-2 rounded border-gray-300 text-[var(--brand-color)] focus:ring-[var(--brand-color)] flex-shrink-0"
+                                  checked={selectedTests.some((t) => getTestId(t) === getTestId(pkg))}
+                                  onChange={() => handleItemToggle({ ...pkg, isPackage: true })}
+                                />
+                              </div>
+                              <p className="text-sm text-[var(--text-secondary)] mb-2">
+                                <ul className="list-disc ml-6">
+                                  {pkg.tests.map((test, index) => (
+                                    <li key={index}>{test.testName}</li>
+                                  )) || "--"}
+                                </ul>
+                              </p>
+                              <p className="text-sm font-semibold text-[var(--text-primary)]">
+                                {pkg.price ? `₹${pkg.price}` : "Price not available"}
+                              </p>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-8 text-[var(--text-secondary)]">
+                            No Packages available
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Desktop Table View */}
+                      <div className="hidden sm:block w-full overflow-x-auto rounded-lg border border-[var(--border-color)]">
+                        <table className="w-full divide-y divide-[var(--border-color)]">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="w-2/5 px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+                                Package Name
+                              </th>
+                              <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+                                Tests
+                              </th>
+                              <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+                                Price
+                              </th>
+                              <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+                                Select
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[var(--border-color)] bg-[var(--surface-color)]">
+                            {isLoadingPackages ? (
+                              <tr>
+                                <td colSpan="4" className="px-4 lg:px-6 py-8 text-center">
+                                  <LoadingSpinner size="w-8 h-8" className="mx-auto" />
+                                </td>
+                              </tr>
+                            ) : filteredPackages.length > 0 ? (
+                              filteredPackages.map((pkg, idx) => (
+                                <tr key={idx}>
+                                  <td className="px-4 lg:px-6 py-4 text-sm font-medium text-[var(--text-primary)] whitespace-normal break-words max-w-xs">
+                                    {pkg.name}
+                                  </td>
+                                  <td className="px-4 lg:px-6 py-4 text-sm text-[var(--text-secondary)] whitespace-normal break-words max-w-sm">
+                                    <ul className="list-disc ml-6">
+                                      {pkg.tests.map((test, index) => (
+                                        <li key={index}>{test.testName}</li>
+                                      )) || "--"}
+                                    </ul>
+                                  </td>
+                                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">
+                                    {pkg.price ? `₹${pkg.price}` : "--"}
+                                  </td>
+                                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm">
+                                    <input
+                                      type="checkbox"
+                                      className="h-4 w-4 rounded border-gray-300 text-[var(--brand-color)] focus:ring-[var(--brand-color)]"
+                                      checked={selectedTests.some((t) => getTestId(t) === getTestId(pkg))}
+                                      onChange={() => handleItemToggle({ ...pkg, isPackage: true })}
+                                    />
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan="4" className="px-4 lg:px-6 py-4 text-sm text-center text-[var(--text-secondary)]">
+                                  No Packages available
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
+                </>
               </div>
 
               <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-t border-[var(--border-color)] pt-4 sm:pt-6">

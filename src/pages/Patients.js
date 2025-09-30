@@ -4,27 +4,55 @@ import Sidebar from "../components/Sidebar";
 import jsPDF from "jspdf";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import { toast } from 'react-toastify';
 
 const LOGO = "/images/45x41inche.....1print...Doted vinyle (1) - Copy.jpg";
+
+const getCurrentDate = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getCurrentTime = () => {
+  const date = new Date();
+  let hours = date.getHours();
+  const minutes = date.getMinutes();
+  const seconds = date.getSeconds();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12; // hour '0' should be '12'
+  const strHours = hours.toString().padStart(2, '0');
+  const strMinutes = minutes.toString().padStart(2, '0');
+  const strSeconds = seconds.toString().padStart(2, '0');
+  return `${strHours}:${strMinutes}:${strSeconds} ${ampm}`;
+};
 
 const PatientTestManager = () => {
   const [patientId, setPatientId] = useState("");
   const [loading, setLoading] = useState(false);
   const [patient, setPatient] = useState(null);
+  const [total, setTotal] = useState(0);
   const [showAddTests, setShowAddTests] = useState(false);
   const [availableTests, setAvailableTests] = useState([]);
   const [selectedTests, setSelectedTests] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
   const [showDiscountModal, setShowDiscountModal] = useState(false);
-  const [newTestsDiscount, setNewTestsDiscount] = useState(0);
+  const [newTestsDiscount, setNewTestsDiscount] = useState("");
   const [allPatients, setAllPatients] = useState([]);
   const [searchName, setSearchName] = useState("");
   const [filteredPatients, setFilteredPatients] = useState([]);
   const [hasSelected, setHasSelected] = useState(false);
+  const [activeTab, setActiveTab] = useState("tests");
+  const [packages, setPackages] = useState([]);
+  const [packageSearchTerm, setPackageSearchTerm] = useState("");
+  const [testSearchTerm, setTestSearchTerm] = useState("");
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isBalance, setIsBalance] = useState(false);
-  const [paymentAmount, setPaymentAmount] = useState(0);
+  const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMode, setPaymentMode] = useState("Cash");
   const [currentPaymentDate, setCurrentPaymentDate] = useState(null);
 
@@ -58,11 +86,11 @@ const PatientTestManager = () => {
         setSelectedTests([]);
         setShowAddTests(false);
       } else {
-        alert("Failed to load patient details");
+        toast.error("Failed to load patient details");
         setPatient(null);
       }
     } catch {
-      alert("Error fetching patient details");
+      toast.error("Error fetching patient details");
       setPatient(null);
     }
     setLoading(false);
@@ -77,10 +105,40 @@ const PatientTestManager = () => {
   // When a calendar date is selected, filter tests of that date
   const testGroupOnSelectedDate = React.useMemo(() => {
     if (!selectedDate || !patient || !patient.tests) return null;
-    return (
-      patient.tests.find((group) => group.requestDate === selectedDate) || null
-    );
-  }, [patient, selectedDate]);
+
+    // Find the test group corresponding to selectedDate
+    const group = patient.tests.find((group) => group.requestDate === selectedDate);
+
+    console.log("group", group);
+
+    if (!group) return null;
+
+    // Compute package statuses for the test items within the group
+    const computePackageStatus = (testItems) => {
+      return testItems.map(item => {
+        if (item.isPackage && item.tests && item.tests.length) {
+          console.log("item", item);
+          const allCompleted = item.tests.every(test => test.status === "Completed");
+          return {
+            ...item,
+            computedStatus: allCompleted ? "Completed" : "Pending"
+          };
+        }
+        return {
+          ...item,
+          computedStatus: item.status || "Pending"
+        }
+      });
+    };
+
+    const updatedTestItems = computePackageStatus(group.testItems || []);
+
+    return {
+      ...group,
+      testItems: updatedTestItems
+    };
+
+  }, [selectedDate, patient]);
 
   const testsOnSelectedDate = testGroupOnSelectedDate?.testItems || [];
   const discountOnSelectedDate = testGroupOnSelectedDate?.discount || 0;
@@ -100,13 +158,51 @@ const PatientTestManager = () => {
     );
   };
 
+  const handleItemToggle = (item) => {
+    const itemId = getTestId(item);
+    setSelectedTests((prev) => {
+      if (prev.find(t => getTestId(t) === itemId)) {
+        // Remove
+        return prev.filter(t => getTestId(t) !== itemId);
+      } else {
+        // Add
+        return [...prev, item];
+      }
+    });
+  };
+
+  const filteredTests = React.useMemo(() => {
+    if (!testSearchTerm.trim()) return availableTests;
+    return availableTests.filter((t) => t.testName.toLowerCase().includes(testSearchTerm.toLowerCase()));
+  }, [testSearchTerm, availableTests]);
+
+  const filteredPackages = React.useMemo(() => {
+    if (!packageSearchTerm.trim()) return packages;
+    return packages.filter((p) => p.name.toLowerCase().includes(packageSearchTerm.toLowerCase()));
+  }, [packageSearchTerm, packages]);
+
+  const getTestId = (test) => test.id || test._id || test.testId;
+
+  // Extract all tests inside selected packages
+  const selectedPackageTestIds = new Set(
+    selectedTests
+      .filter(item => item.isPackage)
+      .flatMap(pkg => pkg.tests.map(t => getTestId(t)))
+  );
+
+  // Use this to disable tests that are part of selected packages
+  const isTestDisabled = test => selectedPackageTestIds.has(getTestId(test));
+
   const openPaymentModal = (requestDate, balance, isBalance) => {
+    console.log("openPaymentModal", requestDate, balance, isBalance);
     setCurrentPaymentDate(requestDate);
     setPaymentAmount(balance || 0);
     setPaymentMode("Cash");
     setIsBalance(isBalance);
     setShowPaymentModal(true);
   };
+
+  const balanceDue = Math.max(0, total - Number(paymentAmount) || 0);
 
   const submitPayment = async () => {
     setShowPaymentModal(false);
@@ -129,15 +225,15 @@ const PatientTestManager = () => {
       );
       const data = await resp.json();
       if (resp.ok) {
-        alert("Payment recorded successfully");
+        toast.success("Payment recorded successfully");
         setPatient(data.patient);
         setCurrentPaymentDate(null);
         setPaymentAmount(0);
       } else {
-        alert(data.error || "Failed to record payment");
+        toast.error(data.error || "Failed to record payment");
       }
     } catch {
-      alert("Error submitting payment");
+      toast.error("Error submitting payment");
     }
   };
 
@@ -151,6 +247,7 @@ const PatientTestManager = () => {
   // Show add test selection table and load available tests excluding already requested
   const handleAddTestClick = async () => {
     setShowAddTests(true);
+    setLoading(true);
     try {
       const resp = await fetch("http://localhost:5000/tests");
       const data = await resp.json();
@@ -162,17 +259,39 @@ const PatientTestManager = () => {
           (test) => !requestedIds.includes(test.id || test._id || test.testId)
         );
         setAvailableTests(filteredTests);
+        setLoading(false);
       } else {
-        alert("Failed to fetch tests list");
+        toast.error("Failed to fetch tests list");
       }
     } catch (e) {
-      alert("Error fetching tests");
+      toast.error("Error fetching tests");
     }
   };
 
+  useEffect(() => {
+      const fetchPackages = async () => {
+        setLoading(true);
+        try {
+          const res = await fetch("http://localhost:5000/packages");
+          const data = await res.json();
+          if (res.ok) {
+            setPackages(data.packages || []);
+            setLoading(false);
+          } else {
+            alert("Failed to load packages");
+          }
+        } catch (error) {
+          console.error("Error fetching packages:", error);
+        }
+      };
+      fetchPackages();
+    }, []);
+
+    const isPackageItem = (item) => item.isPackage === true;
+
   const handleConfirm = () => {
     if (selectedTests.length === 0) {
-      alert("Please select at least one test");
+      toast.warn("Please select at least one test");
       return;
     }
     setShowDiscountModal(true); // show modal to enter discount
@@ -188,6 +307,8 @@ const PatientTestManager = () => {
         },
         tests: selectedTests,
         discount: newTestsDiscount,
+        date: getCurrentDate(),
+        time: getCurrentTime(),
       };
       const resp = await fetch(
         `http://localhost:5000/patients/${patient.patientId}/add-tests`,
@@ -199,17 +320,17 @@ const PatientTestManager = () => {
       );
       const data = await resp.json();
       if (resp.ok) {
-        alert("Tests added successfully");
+        toast.success("Tests added successfully");
         setSelectedTests([]);
         setNewTestsDiscount(0);
         setShowDiscountModal(false);
         setPatient(data.patient);
         setShowAddTests(false);
       } else {
-        alert(data.error || "Failed to add tests");
+        toast.error(data.error || "Failed to add tests");
       }
     } catch (error) {
-      alert("Server error while adding tests");
+      toast.error("Server error while adding tests");
     }
   };
 
@@ -228,10 +349,17 @@ const PatientTestManager = () => {
 
   useEffect(() => {
     const filtered = allPatients.filter((p) =>
-      p.name.toLowerCase().includes(searchName.toLowerCase())
+      p.name.toLowerCase().includes(searchName.toLowerCase()) ||
+      p.contact && p.contact.toLowerCase().includes(searchName.toLowerCase())
     );
     setFilteredPatients(filtered);
   }, [searchName, allPatients]);
+
+  useEffect(() => {
+    const totalPrice = selectedTests.reduce((sum, t) => sum + Number(t.price), 0);
+    const discountValue = Number(newTestsDiscount) || 0;
+    setTotal(totalPrice - discountValue);
+  }, [selectedTests, newTestsDiscount]);
 
   useEffect(() => {
     async function rehydrate() {
@@ -273,12 +401,12 @@ const PatientTestManager = () => {
             setPatient(data.patient);
           } else {
             setPatient(null);
-            alert("Could not find patient on rehydration");
+            toast.error("Could not find patient on rehydration");
           }
         }
       } catch (error) {
         setPatient(null);
-        alert("Error during rehydration");
+        toast.error("Error during rehydration");
       }
     }
 
@@ -300,9 +428,15 @@ const PatientTestManager = () => {
     }
   }, [patient]);
 
+  const LoadingSpinner = ({ size = "w-6 h-6", className = "" }) => (
+    <div className={`${size} ${className}`}>
+      <div className="animate-spin rounded-full border-2 border-gray-300 border-t-[var(--brand-color)]"></div>
+    </div>
+  );
+
   const getOrCreateInvoiceNumber = async () => {
     if (!patient || !selectedDate) {
-      alert("No selected patient or date");
+      toast.warn("No selected patient or date");
       return null;
     }
 
@@ -317,19 +451,19 @@ const PatientTestManager = () => {
       );
       const data = await resp.json();
       if (!resp.ok) {
-        alert(data.error || "Failed to get invoice number");
+        toast.error(data.error || "Failed to get invoice number");
         return null;
       }
       return data.invoiceNo;
     } catch (error) {
-      alert("Error fetching invoice number");
+      toast.error("Error fetching invoice number");
       return null;
     }
   };
 
   const generateInvoicePDF = (date, tests, invoiceNo) => {
     if (!patient || !date || !tests.length) {
-      alert("No test data for this date");
+      toast.warn("No test data for this date");
       return;
     }
     const doc = new jsPDF({
@@ -341,29 +475,46 @@ const PatientTestManager = () => {
       doc.addImage(LOGO, "PNG", 12, 6, 22, 22);
     }
 
-    doc.setFont("helvetica");
-    doc.setFontSize(15);
-    doc.text("PHANI S DOCTOR LABORATORIES AND DIAGNOSTICS", 52, 14);
-    doc.setFontSize(9);
-    doc.text("TRUST & QUALITY", 105, 20);
+    doc.setFont("times", "italic");
+    doc.setFontSize(12);
+    doc.setTextColor(0, 102, 204); // Blue
+    doc.text("Phani's", 38, 10);
+
+    // "DOCTOR"
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(24);
+    doc.setTextColor(0, 0, 179);
+    doc.text("DOCTOR", 38, 17,);
+
+    // Telugu line
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.setTextColor(128, 0, 128); // Purple
+    doc.text("LABORATORIES & DIAGNOSTICS", 76, 22, { align: "center" });
+
+    // Trust & Quality
+    doc.setFont("times", "italic");
+    doc.setFontSize(10);
+    doc.setTextColor(80, 80, 80);
+    doc.text("Trust & Quality", 90, 25);
+
+    // Address & contact
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
-    doc.text(
-      "BAIGS MANZIL, TADIGADAPA, DONKA ROAD, YANAMALAKUDURU",
-      75,
-      24
-    );
-    doc.text(
-      "Contact: 9848833770 / 8074186770  |  doctorlab8181@gmail.com",
-      77.5,
-      28
-    );
+    doc.setTextColor(0, 0, 0);
+    doc.text("Baig's Manzil, Near Hydari Masjid,", 200, 10, { align: "right" });
+    doc.text("Tadigadapa Donka Road,", 200, 14, { align: "right" });
+    doc.text("Yanamalakuduru,", 200, 18, { align: "right" });
+    doc.text("Vijayawada - 520007, A.P.", 200, 22, { align: "right" });
+    doc.text("Contact: 9848833770 / 8074186770", 200, 26, { align: "right" });
+    doc.text("Email: doctorlab8181@gmail.com", 200, 30, { align: "right" });
 
     let y = 34;
     doc.line(12, y, 200, y);
     y += 4;
 
     doc.setFontSize(10);
-    doc.text(`Invoice No: ${invoiceNo || "-"}`, 12, y);
+    doc.text(`Invoice No: ${patient.patientId} /${invoiceNo || "-"}`, 12, y);
     y += 7;
     doc.text(`Patient Name: ${patient.name || "-"}`, 12, y);
     doc.text(`Patient ID: ${patient.patientId || "-"}`, 140, y);
@@ -374,7 +525,7 @@ const PatientTestManager = () => {
     doc.text(`Contact: ${patient.contact || "-"}`, 12, y);
     doc.text(`Address: ${patient.address || "-"}`, 140, y);
     y += 7;
-    doc.text(`Ref By: ${patient.doctor || "-"}`, 12, y);
+    doc.text(`Ref By: Dr. ${patient.doctor || "-"}`, 12, y);
 
     y += 8;
     doc.setFontSize(9.5);
@@ -395,7 +546,15 @@ const PatientTestManager = () => {
       doc.setDrawColor(220);
       doc.line(12, y, 198, y);
       const price = typeof test.price === "number" ? test.price : Number(test.price) || 0;
-      const descriptionLines = doc.splitTextToSize(test.testName || "-", 60);
+
+      if (test.isPackage) {
+        const packageDescription = test.name;
+        const testNames = test.tests.map(t => t.testName).join(", ");
+        const fullDescription = `${packageDescription}\n${testNames}`;
+        var descriptionLines = doc.splitTextToSize(fullDescription, 60);
+      } else {
+        var descriptionLines = doc.splitTextToSize(test.testName || "-", 60);
+      }
 
       doc.text(String(idx + 1), 16, y + 6);
       doc.text(date, 25, y + 6);
@@ -403,7 +562,13 @@ const PatientTestManager = () => {
       doc.text(`Rs. ${price.toFixed(2)}`, 140, y + 6, { maxWidth: 25 });
       doc.text(`Rs. ${price.toFixed(2)}`, 170, y + 6, { maxWidth: 20 });
 
-      y += 8 * descriptionLines.length;
+      if (test.isPackage) {
+        console.log("descriptionLines", descriptionLines);
+        y += 5 * descriptionLines.length;
+      } else {
+        y += 8 * descriptionLines.length;
+      }
+      
       total += price;
     });
 
@@ -437,6 +602,12 @@ const PatientTestManager = () => {
 
     doc.setFontSize(9);
     doc.text("THANK YOU, VISIT AGAIN", 95, y, { align: "center" });
+
+    // Footer timestamp
+    const generatedAt = new Date().toLocaleString(); // e.g. "9/30/2025, 11:15:23 PM"
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.text(`Generated on: ${generatedAt}`, 105, 290, { align: "center" });
 
     doc.save(`${patient.name || "invoice"}_${date}.pdf`);
   };
@@ -564,7 +735,7 @@ const PatientTestManager = () => {
               <input
                 type="text"
                 className="rounded-md border border-gray-300 px-3 py-2 w-full"
-                placeholder="Search patient by name"
+                placeholder="Search patient by name or mobile number"
                 value={searchName}
                 onChange={(e) => {
                   setSearchName(e.target.value);
@@ -729,22 +900,30 @@ const PatientTestManager = () => {
                                       patientId: patient.id || patient.patientId,
                                       patient,
                                       testGroupOnSelectedDate,
+                                      selectedDate,
+                                      isPackage: test.isPackage ? test.isPackage : false,
                                     },
                                   }
                                 )
                               }
                             >
-                              <td className="px-3 sm:px-4 py-2">{test.testName}</td>
-                              <td className="px-3 sm:px-4 py-2">{test.description || "--"}</td>
+                              <td className="px-3 sm:px-4 py-2">{test.isPackage ? test.name : test.testName}</td>
+                              <td className="px-3 sm:px-4 py-2">
+                                {test.isPackage ? 
+                                  <ul className="list-disc ml-6">
+                                    {test.tests.map((test, index) => (
+                                      <li key={index}>{test.testName}</li>
+                                    )) || "--"}
+                                  </ul> : test.description || "--"}</td>
                               <td className="px-3 sm:px-4 py-2">₹{test.price}</td>
                               <td className="px-3 sm:px-4 py-2">{selectedDate}</td>
                               <td className="px-3 sm:px-4 py-2">
                                 <span className={`inline-block px-2 py-1 text-xs rounded ${
-                                  test.status === 'Completed' ? 'bg-green-100 text-green-800' : 
-                                  test.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 
+                                  test.computedStatus === 'Completed' ? 'bg-green-100 text-green-800' : 
+                                  test.computedStatus === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 
                                   'bg-gray-100 text-gray-800'
                                 }`}>
-                                  {test.status}
+                                  {test.computedStatus}
                                 </span>
                               </td>
                             </tr>
@@ -768,7 +947,7 @@ const PatientTestManager = () => {
                       disabled={!selectedDate || testsOnSelectedDate.length === 0}
                       onClick={async () => {
                         if (!testGroupOnSelectedDate?.paymentInfo?.cleared) {
-                          alert("Cannot generate invoice: Balance is NOT cleared for this test date!");
+                          toast.warn("Cannot generate invoice: Balance is NOT cleared for this test date!");
                           return;
                         }
                         const invoiceNo = await getOrCreateInvoiceNumber();
@@ -829,7 +1008,280 @@ const PatientTestManager = () => {
 
             {showAddTests && (
               <div className="mt-10">
-                <h3 className="mb-4 text-xl font-bold">Select Tests To Add</h3>
+                <>
+                  <div className="flex border-b border-gray-300 mb-4">
+                    <button
+                      type="button"
+                      className={`px-4 py-2 font-semibold ${activeTab === "tests" ? "border-b-2 border-brand-color" : ""}`}
+                      onClick={() => setActiveTab("tests")}
+                    >
+                      Tests
+                    </button>
+                    <button
+                      type="button"
+                      className={`px-4 py-2 font-semibold ${activeTab === "packages" ? "border-b-2 border-brand-color" : ""}`}
+                      onClick={() => setActiveTab("packages")}
+                    >
+                      Packages
+                    </button>
+                  </div>
+
+                  {activeTab === "tests" && (
+                    <>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg sm:text-xl font-bold">Select Tests</h3>
+                        {loading && <LoadingSpinner />}
+                      </div>
+
+                      <input
+                        type="text"
+                        placeholder="Search tests..."
+                        className="w-full border border-[var(--border-color)] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:border-[var(--border-color)] mb-2"
+                        value={testSearchTerm}
+                        onChange={(e) => setTestSearchTerm(e.target.value)}
+                      />
+
+                      {/* Mobile Card View */}
+                      <div className="block sm:hidden space-y-4">
+                        {loading ? (
+                          <div className="flex justify-center py-8">
+                            <LoadingSpinner size="w-8 h-8" />
+                          </div>
+                        ) : filteredTests.length > 0 ? (
+                          filteredTests.map((test, idx) => (
+                            <div key={idx} className="border border-[var(--border-color)] rounded-lg p-4 bg-[var(--surface-color)]">
+                              <div className="flex items-start justify-between mb-2">
+                                <h4 className="font-medium text-[var(--text-primary)] text-sm leading-tight">
+                                  {test.testName}
+                                </h4>
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4 ml-2 rounded border-gray-300 text-[var(--brand-color)] focus:ring-[var(--brand-color)] flex-shrink-0"
+                                  checked={selectedTests.some((t) => getTestId(t) === getTestId(test))}
+                                  disabled={isTestDisabled(test)}
+                                  onChange={() => handleItemToggle(test)}
+                                />
+                              </div>
+                              <p className="text-sm text-[var(--text-secondary)] mb-2">
+                                {test.description || "No description available"}
+                              </p>
+                              <p className="text-sm font-semibold text-[var(--text-primary)]">
+                                {test.price ? `₹${test.price}` : "Price not available"}
+                              </p>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-8 text-[var(--text-secondary)]">
+                            No tests available
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Desktop Table View */}
+                      <div className="hidden sm:block w-full overflow-x-auto rounded-lg border border-[var(--border-color)]">
+                        <table className="w-full divide-y divide-[var(--border-color)]">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="w-2/5 px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+                                Test Name
+                              </th>
+                              <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+                                Description
+                              </th>
+                              <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+                                Price
+                              </th>
+                              <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+                                Select
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[var(--border-color)] bg-[var(--surface-color)]">
+                            {loading ? (
+                              <tr>
+                                <td colSpan="4" className="px-4 lg:px-6 py-8 text-center">
+                                  <LoadingSpinner size="w-8 h-8" className="mx-auto" />
+                                </td>
+                              </tr>
+                            ) : filteredTests.length > 0 ? (
+                              filteredTests.map((test, idx) => (
+                                <tr key={idx}>
+                                  <td className="px-4 lg:px-6 py-4 text-sm font-medium text-[var(--text-primary)] whitespace-normal break-words max-w-xs">
+                                    {test.testName}
+                                  </td>
+                                  <td className="px-4 lg:px-6 py-4 text-sm text-[var(--text-secondary)] whitespace-normal break-words max-w-sm">
+                                    {test.description || "--"}
+                                  </td>
+                                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">
+                                    {test.price ? `₹${test.price}` : "--"}
+                                  </td>
+                                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm">
+                                    <input
+                                      type="checkbox"
+                                      className="h-4 w-4 rounded border-gray-300 text-[var(--brand-color)] focus:ring-[var(--brand-color)]"
+                                      checked={selectedTests.some((t) => getTestId(t) === getTestId(test))}
+                                      disabled={isTestDisabled(test)}
+                                      onChange={() => handleItemToggle(test)}
+                                    />
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan="4" className="px-4 lg:px-6 py-4 text-sm text-center text-[var(--text-secondary)]">
+                                  No tests available
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-end">
+                        <button
+                          onClick={() => setShowAddTests(false)}
+                          className="order-3 sm:order-1 rounded-md border border-gray-300 px-4 py-2 bg-gray-50 hover:bg-gray-100 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                         <button
+                          onClick={() =>
+                            navigate("/add-test", {
+                              state: {
+                                fromPatientTestManager: true,
+                                patientId,
+                                selectedTests,
+                              },
+                            })
+                          }
+                          className="order-2 rounded-md border border-[var(--border-color)] px-4 py-2 bg-white hover:bg-gray-50 transition-colors"
+                        >
+                          Add New Test
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {activeTab === "packages" && (
+                    <>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg sm:text-xl font-bold">Select Packages</h3>
+                        {loading && <LoadingSpinner />}
+                      </div>
+
+                      <input
+                        type="text"
+                        placeholder="Search tests..."
+                        className="w-full border border-[var(--border-color)] rounded px-3 py-2 focus:outline-none focus:ring-2 focus:border-[var(--border-color)] mb-2"
+                        value={packageSearchTerm}
+                        onChange={(e) => setPackageSearchTerm(e.target.value)}
+                      />
+
+                      {/* Mobile Card View */}
+                      <div className="block sm:hidden space-y-4">
+                        {loading ? (
+                          <div className="flex justify-center py-8">
+                            <LoadingSpinner size="w-8 h-8" />
+                          </div>
+                        ) : filteredPackages.length > 0 ? (
+                          filteredPackages.map((pkg, idx) => (
+                            <div key={idx} className="border border-[var(--border-color)] rounded-lg p-4 bg-[var(--surface-color)]">
+                              <div className="flex items-start justify-between mb-2">
+                                <h4 className="font-medium text-[var(--text-primary)] text-sm leading-tight">
+                                  {pkg.name}
+                                </h4>
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4 ml-2 rounded border-gray-300 text-[var(--brand-color)] focus:ring-[var(--brand-color)] flex-shrink-0"
+                                  checked={selectedTests.some((t) => getTestId(t) === getTestId(pkg))}
+                                  onChange={() => handleItemToggle({ ...pkg, isPackage: true })}
+                                />
+                              </div>
+                              <p className="text-sm text-[var(--text-secondary)] mb-2">
+                                <ul className="list-disc ml-6">
+                                  {pkg.tests.map((test, index) => (
+                                    <li key={index}>{test.testName}</li>
+                                  )) || "--"}
+                                </ul>
+                              </p>
+                              <p className="text-sm font-semibold text-[var(--text-primary)]">
+                                {pkg.price ? `₹${pkg.price}` : "Price not available"}
+                              </p>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-8 text-[var(--text-secondary)]">
+                            No Packages available
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Desktop Table View */}
+                      <div className="hidden sm:block w-full overflow-x-auto rounded-lg border border-[var(--border-color)]">
+                        <table className="w-full divide-y divide-[var(--border-color)]">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="w-2/5 px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+                                Package Name
+                              </th>
+                              <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+                                Tests
+                              </th>
+                              <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+                                Price
+                              </th>
+                              <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+                                Select
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[var(--border-color)] bg-[var(--surface-color)]">
+                            {loading ? (
+                              <tr>
+                                <td colSpan="4" className="px-4 lg:px-6 py-8 text-center">
+                                  <LoadingSpinner size="w-8 h-8" className="mx-auto" />
+                                </td>
+                              </tr>
+                            ) : filteredPackages.length > 0 ? (
+                              filteredPackages.map((pkg, idx) => (
+                                <tr key={idx}>
+                                  <td className="px-4 lg:px-6 py-4 text-sm font-medium text-[var(--text-primary)] whitespace-normal break-words max-w-xs">
+                                    {pkg.name}
+                                  </td>
+                                  <td className="px-4 lg:px-6 py-4 text-sm text-[var(--text-secondary)] whitespace-normal break-words max-w-sm">
+                                    <ul className="list-disc ml-6">
+                                      {pkg.tests.map((test, index) => (
+                                        <li key={index}>{test.testName}</li>
+                                      )) || "--"}
+                                    </ul>
+                                  </td>
+                                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">
+                                    {pkg.price ? `₹${pkg.price}` : "--"}
+                                  </td>
+                                  <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm">
+                                    <input
+                                      type="checkbox"
+                                      className="h-4 w-4 rounded border-gray-300 text-[var(--brand-color)] focus:ring-[var(--brand-color)]"
+                                      checked={selectedTests.some((t) => getTestId(t) === getTestId(pkg))}
+                                      onChange={() => handleItemToggle({ ...pkg, isPackage: true })}
+                                    />
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan="4" className="px-4 lg:px-6 py-4 text-sm text-center text-[var(--text-secondary)]">
+                                  No Packages available
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
+                </>
+                {/* <h3 className="mb-4 text-xl font-bold">Select Tests To Add</h3>
                 <div className="overflow-x-auto rounded-lg border border-[var(--border-color)]">
                   <table className="w-full divide-y divide-[var(--border-color)] min-w-[600px]">
                     <thead className="bg-gray-50">
@@ -870,31 +1322,12 @@ const PatientTestManager = () => {
                       )}
                     </tbody>
                   </table>
-                </div>
+                </div> */}
                 <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-end">
-                  <button
-                    onClick={() => setShowAddTests(false)}
-                    className="order-3 sm:order-1 rounded-md border border-gray-300 px-4 py-2 bg-gray-50 hover:bg-gray-100 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() =>
-                      navigate("/add-test", {
-                        state: {
-                          fromPatientTestManager: true,
-                          patientId,
-                          selectedTests,
-                        },
-                      })
-                    }
-                    className="order-2 rounded-md border border-[var(--border-color)] px-4 py-2 bg-white hover:bg-gray-50 transition-colors"
-                  >
-                    Add New Test
-                  </button>
+                  <p className="text-lg sm:text-xl font-bold">Total Bill: ₹{total}</p>
                   <button
                     onClick={handleConfirm}
-                    className="order-1 sm:order-3 rounded-md bg-[var(--primary-color)] px-6 py-2 text-white font-bold hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="order-1 sm:order-3 rounded-md bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-2 text-white hover:shadow-xl hover:from-blue-700 hover:to-blue-800 font-boldocus:outline-none focus:ring-4 focus:ring-blue-500/30 disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none disabled:from-gray-400 disabled:to-gray-500 transform hover:scale-105 active:scale-95 transition-all duration-200 ease-in-out"
                     disabled={selectedTests.length === 0}
                   >
                     Confirm Add ({selectedTests.length})
@@ -909,7 +1342,16 @@ const PatientTestManager = () => {
                   <h3 className="text-lg font-semibold mb-4">
                     Record Payment for {currentPaymentDate}
                   </h3>
-                  <p className="mb-4 text-gray-700">Total Due: ₹{paymentAmount}</p>
+                  <p className="mb-4 text-gray-700">
+                    Total Due <span className="font-bold">{total}</span>
+                    {Number(paymentAmount) > 0 &&
+                      <span className="ml-2 text-gray-500">
+                        Balance after payment: <span className="font-bold">
+                          {balanceDue}
+                        </span>
+                      </span>
+                    }
+                  </p>
                   <div className="mb-4">
                     <label className="block mb-2 text-sm font-medium text-gray-700">Amount:</label>
                     <input

@@ -503,6 +503,8 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Skeleton } from "@mui/material";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
 
 const TIME_RANGES = ["Day", "Week", "Month", "Year"];
 const TOP_TESTS_OPTIONS = ["Top 5", "View All"];
@@ -534,6 +536,11 @@ function ReportsDashboard() {
   const [incomeTrendData, setIncomeTrendData] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const [customDate, setCustomDate] = useState(new Date());
+  const [customRange, setCustomRange] = useState([new Date(), new Date()]);
+  const [customMonth, setCustomMonth] = useState(new Date());
+  const [customYear, setCustomYear] = useState(new Date());
+
   const [showExpenseModal, setShowExpenseModal] = useState(false);
   const [expenseForm, setExpenseForm] = useState({
     date: "",
@@ -554,14 +561,40 @@ function ReportsDashboard() {
     }
   }
 
+  function getDateBounds() {
+    if (testTimeRange === "Day") {
+      const d = customDate.toISOString().slice(0,10);
+      return { startDate: d, endDate: d };
+    }
+    if (testTimeRange === "Week") {
+      // Ensure both range dates are set
+      const [start, end] = Array.isArray(customRange) && customRange.length === 2
+        ? customRange.map(d => d.toISOString().slice(0,10))
+        : [null, null];
+      return { startDate: start, endDate: end || start };
+    }
+    if (testTimeRange === "Month") {
+      const mStart = new Date(customMonth.getFullYear(), customMonth.getMonth(), 1).toISOString().slice(0,10);
+      const mEnd = new Date(customMonth.getFullYear(), customMonth.getMonth()+1, 0).toISOString().slice(0,10);
+      return { startDate: mStart, endDate: mEnd };
+    }
+    if (testTimeRange === "Year") {
+      const yStart = `${customYear.getFullYear()}-01-01`;
+      const yEnd = `${customYear.getFullYear()}-12-31`;
+      return { startDate: yStart, endDate: yEnd };
+    }
+    return {};
+  }
+
   useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true);
+        const { startDate, endDate } = getDateBounds();
         const testRangeParam = mapTimeRangeToParam(testTimeRange);
         const topParam = testTopFilter === "Top 5" ? 5 : 1000;
         const testsResp = await fetch(
-          `http://localhost:5000/testsFrequency?range=${testRangeParam}&top=${topParam}`
+          `http://localhost:5000/testsFrequency?range=${testRangeParam}&top=${topParam}&startDate=${startDate}&endDate=${endDate}`
         );
         const testsData = await testsResp.json();
         setFrequentTests(testsData.tests || []);
@@ -571,16 +604,15 @@ function ReportsDashboard() {
         const grandTestsData = await grandTestsResp.json();
         setGrandTotalTests(grandTestsData.total || 0);
 
-        const revRangeParam = mapTimeRangeToParam(revenueTimeRange);
         const paymentParam = paymentType;
 
         const incomeResp = await fetch(
-          `http://localhost:5000/revenue?range=${revRangeParam}&paymentType=${paymentParam}`
+          `http://localhost:5000/revenue?range=${testRangeParam}&paymentType=${paymentParam}&startDate=${startDate}&endDate=${endDate}`
         );
         const incomeData = await incomeResp.json();
 
         const expenseResp = await fetch(
-          `http://localhost:5000/expenses?range=${revRangeParam}`
+          `http://localhost:5000/expenses?range=${testRangeParam}&startDate=${startDate}&endDate=${endDate}`
         );
         const expenseData = await expenseResp.json();
 
@@ -594,11 +626,11 @@ function ReportsDashboard() {
         const netChange = previousNet ? ((currentNet - previousNet) / Math.abs(previousNet)) * 100 : 0;
         setNetCashFlow({ amount: currentNet, change: netChange });
 
-        const expensesResp = await fetch(`http://localhost:5000/expensesList?range=${revRangeParam}`);
+        const expensesResp = await fetch(`http://localhost:5000/expensesList?range=${testRangeParam}&startDate=${startDate}&endDate=${endDate}`);
         const expensesData = await expensesResp.json();
         setExpenses(expensesData.expenses || []);
 
-        const otherExpensesResp = await fetch(`http://localhost:5000/getExpenses?range=${revRangeParam}`);
+        const otherExpensesResp = await fetch(`http://localhost:5000/getExpenses?range=${testRangeParam}&startDate=${startDate}&endDate=${endDate}`);
         const otherExpensesData = await otherExpensesResp.json();
         setOtherExpenses(otherExpensesData.expenses || []);
       } catch (error) {
@@ -608,7 +640,7 @@ function ReportsDashboard() {
       }
     }
     fetchData();
-  }, [testTopFilter, testTimeRange, revenueTimeRange, paymentType]);
+  }, [testTopFilter, testTimeRange, revenueTimeRange, paymentType, customDate, customRange, customMonth, customYear]);
 
   useEffect(() => {
     async function fetchTrend() {
@@ -709,7 +741,7 @@ function ReportsDashboard() {
               </button>
 
               <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">
-                Reports
+                Statistics
               </h1>
 
               <div className="flex items-center gap-4">
@@ -759,7 +791,7 @@ function ReportsDashboard() {
                     </h2>
 
                     {/* Filters for test stats */}
-                    <div className="flex mb-4 gap-4">
+                    <div className="flex mb-4 gap-4 items-center relative">
                       {/* Top Tests Select */}
                       <select
                         value={testTopFilter}
@@ -781,6 +813,37 @@ function ReportsDashboard() {
                           <option key={opt} value={opt}>{opt}</option>
                         ))}
                       </select>
+
+                      {testTimeRange === "Day" && (
+                        <Calendar
+                          value={customDate}
+                          onChange={setCustomDate}
+                        />
+                      )}
+                      {testTimeRange === "Week" && (
+                        <Calendar
+                          selectRange
+                          value={customRange}
+                          onChange={setCustomRange}
+                        />
+                      )}
+                      {testTimeRange === "Month" && (
+                        <input
+                          type="month"
+                          value={customMonth.toISOString().slice(0,7)}
+                          onChange={e => setCustomMonth(new Date(e.target.value + "-01"))}
+                          className="px-3 py-1 rounded border"
+                        />
+                      )}
+                      {testTimeRange === "Year" && (
+                        <input
+                          type="number"
+                          min="2000"
+                          value={customYear.getFullYear()}
+                          onChange={e => setCustomYear(new Date(`${e.target.value}-01-01`))}
+                          className="px-3 py-1 rounded border w-24"
+                        />
+                      )}
                     </div>
 
                     {/* Tests Frequency Cards */}
@@ -800,7 +863,7 @@ function ReportsDashboard() {
                           {/* You can calculate % change dynamically if backend provides */}
                           <div className="mt-2 flex items-center gap-1">
                             <p className="text-sm font-medium text-[#16a34a]">{typeof change === 'number' && !isNaN(change) ? change.toFixed(2) : '--'}%</p>
-                            <p className="text-sm text-[#64748b]">vs last month</p>
+                            <p className="text-sm text-[#64748b]">since last {testTimeRange}</p>
                           </div>
                         </div>
                         <div className="lg:col-span-3">
@@ -866,17 +929,6 @@ function ReportsDashboard() {
                           </label>
                         ))}
                       </div>
-
-                      {/* Revenue Time Range */}
-                      <select
-                        value={revenueTimeRange}
-                        onChange={e => setRevenueTimeRange(e.target.value)}
-                        className="px-3 py-1 rounded border"
-                      >
-                        {TIME_RANGES.map(opt => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
                     </div>
 
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">

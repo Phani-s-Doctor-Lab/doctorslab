@@ -635,8 +635,6 @@
 //   );
 // }
 
-
-
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
@@ -695,7 +693,10 @@ function ReagentUsageForm({ inventory, usageList, setUsageList }) {
         }
 
         return (
-          <div key={idx} className="grid grid-cols-12 gap-2 items-center bg-white p-3 rounded shadow">
+          <div
+            key={idx}
+            className="grid grid-cols-12 gap-2 items-center bg-white p-3 rounded shadow"
+          >
             <div className="col-span-5">
               <input
                 type="text"
@@ -726,7 +727,7 @@ function ReagentUsageForm({ inventory, usageList, setUsageList }) {
                 onChange={(e) => handleQuantityChange(idx, e.target.value)}
               />
             </div>
-            <div className="col-span-3"></div>
+            <div className="md:col-span-3 col-span-1"></div>
             <div className="col-span-1 flex space-x-1">
               {usageList.length > 1 && (
                 <button
@@ -741,9 +742,7 @@ function ReagentUsageForm({ inventory, usageList, setUsageList }) {
                 <button
                   className="text-blue-600 bg-blue-100 rounded px-2"
                   onClick={addUsageRow}
-                  disabled={
-                    !usage.itemId || !usage.quantity
-                  }
+                  disabled={!usage.itemId || !usage.quantity}
                   title="Add"
                 >
                   +
@@ -773,40 +772,119 @@ export default function EnterTestResult() {
   const [includeSignature, setIncludeSignature] = useState(true);
   const [includeLetterhead, setIncludeLetterhead] = useState(true);
   const [interpretation, setInterpretation] = useState("");
+  const [reportDate, setReportDate] = useState(new Date());
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [openTestFormId, setOpenTestFormId] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
   const [showSignatureDialog, setShowSignatureDialog] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedPackageTestId, setSelectedPackageTestId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [packageTestsResults, setPackageTestsResults] = useState([]);
   const passedState = location.state || {};
   const testGroupFromState = passedState.testGroupOnSelectedDate;
+  const isPackage = passedState.isPackage;
+  const selectedDate = passedState.selectedDate;
+
+  console.log(isPackage);
 
   const userName =
-    localStorage.getItem("userName") || sessionStorage.getItem("userName") || "";
-    
+    localStorage.getItem("userName") ||
+    sessionStorage.getItem("userName") ||
+    "";
+
+  function formatDateSimple(dateStr) {
+    const d = new Date(dateStr);
+    if (isNaN(d)) return "N/A";
+
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+
+    let hours = d.getHours();
+    const minutes = String(d.getMinutes()).padStart(2, "0");
+    const seconds = String(d.getSeconds()).padStart(2, "0");
+
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12;
+    hours = hours || 12; // convert 0 to 12
+    const strHours = String(hours).padStart(2, "0");
+
+    return `${year}-${month}-${day},${strHours}:${minutes}:${seconds} ${ampm}`;
+  }
+
   // Fetch data on load
   useEffect(() => {
     async function fetchAll() {
       try {
         setLoading(true);
-        const pRes = await fetch(`http://localhost:5000/patients/${patientId}`);
+
+        // Fetch patient data
+        const pRes = await fetch(
+          `http://localhost:5000/patients/${patientId}`,
+          { cache: "no-store" }
+        );
+        if (!pRes.ok) throw new Error(`Patient fetch failed: ${pRes.status}`);
         const pData = await pRes.json();
-        const tRes = await fetch(`http://localhost:5000/tests/${testId}`);
+
+        // Fetch test or package data depending on isPackage
+        const testUrl = isPackage
+          ? `http://localhost:5000/packages/${testId}`
+          : `http://localhost:5000/tests/${testId}`;
+
+        const tRes = await fetch(testUrl, { cache: "no-store" });
+        if (!tRes.ok)
+          throw new Error(`Test/package fetch failed: ${tRes.status}`);
         const tData = await tRes.json();
-        const rRes = await fetch(`http://localhost:5000/patients/${patientId}/tests/${testId}/results`);
+
+        // Fetch individual test results
+        const rRes = await fetch(
+          `http://localhost:5000/patients/${patientId}/tests/${testId}/${selectedDate}/results`,
+          { cache: "no-store" }
+        );
+        if (!rRes.ok)
+          throw new Error(`Test results fetch failed: ${rRes.status}`);
         const rData = await rRes.json();
+
+        // If package, fetch all tests results in package
+        let prData = null;
+        if (isPackage) {
+          const pRes2 = await fetch(
+            `http://localhost:5000/patients/${patientId}/packages/${testId}/${selectedDate}/results`,
+            { cache: "no-store" }
+          );
+          if (!pRes2.ok)
+            throw new Error(
+              `Package tests results fetch failed: ${pRes2.status}`
+            );
+          prData = await pRes2.json();
+        }
+
+        // Debugging logs
+        console.log("Patient data:", pData);
+        console.log("Test/Package data:", tData);
+        console.log("Individual test results:", rData);
+        console.log("Package tests results:", prData);
+
+        // Save to state
         setPatient(pData.patient);
         setTest(tData);
         setValues(rData.results || {});
         setInterpretation(rData.interpretation || "");
-      } catch {
-        alert("Failed to fetch data");
+        setReportDate(rData.reportDate || new Date());
+        setPackageTestsResults(prData?.testsResults || []);
+      } catch (error) {
+        console.error("Fetch error:", error);
+        alert(`Failed to fetch data: ${error.message || error}`);
       } finally {
         setLoading(false);
       }
     }
+
     fetchAll();
-  }, [patientId, testId]);
+  }, [patientId, testId, selectedDate, isPackage]);
+
+  console.log("test", test);
 
   useEffect(() => {
     async function fetchInventory() {
@@ -814,7 +892,7 @@ export default function EnterTestResult() {
         const res = await fetch("http://localhost:5000/inventory");
         const data = await res.json();
         setInventory(data.inventory || []);
-      } catch { }
+      } catch {}
     }
     fetchInventory();
   }, []);
@@ -829,7 +907,7 @@ export default function EnterTestResult() {
           setSelectedSignatureId(data.signatures[0].id);
           setSelectedSignatureName(data.signatures[0].name);
         }
-      } catch { }
+      } catch {}
     }
     fetchSignatures();
   }, []);
@@ -838,13 +916,31 @@ export default function EnterTestResult() {
   useEffect(() => {
     const usageMap = {};
     usageList.forEach((usage) => {
-      if (usage.itemId && usage.quantity) usageMap[usage.itemId] = usage.quantity;
+      if (usage.itemId && usage.quantity)
+        usageMap[usage.itemId] = usage.quantity;
     });
   }, [usageList]);
 
   const handleValueChange = (param, val) => {
     setValues((v) => ({ ...v, [param]: val }));
   };
+
+  const toggleTestForm = (id) => {
+    setSelectedPackageTestId(id);
+    setOpenTestFormId(openTestFormId === id ? null : id);
+  };
+
+  useEffect(() => {
+    if (isPackage && selectedPackageTestId && packageTestsResults.length) {
+      const selectedTest = packageTestsResults.find(
+        (t) => t.id === selectedPackageTestId
+      );
+      if (selectedTest) {
+        setValues(selectedTest.results || {});
+        setInterpretation(selectedTest.interpretation || "");
+      }
+    }
+  }, [selectedPackageTestId, packageTestsResults]);
 
   // PDF Generation - uses jsPDF + autotable
   const generatePDFWithAutoTable = (signatureName, preview = false) => {
@@ -853,7 +949,11 @@ export default function EnterTestResult() {
       return;
     }
 
-    const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+    const doc = new jsPDF({
+      unit: "mm",
+      format: "a4",
+      orientation: "portrait",
+    });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
 
@@ -861,90 +961,276 @@ export default function EnterTestResult() {
     const margin2X = pageWidth - 85;
     const lineSpacing = 6;
 
-    // prepare table
-    const tableHeaders = ["Parameter", "Result", "Unit", "Reference Range(s)", "Method"];
-    const tableData = test.parameters.map((param) => [
-      param.name || "--",
-      values[param.name] || "--",
-      param.unit || "--",
-      param.referenceRanges?.length
-        ? param.referenceRanges.map((r) => `${r.group}: ${r.range}`).join("\n")
-        : "--",
-      test.methodology || "--",
-    ]);
+    if (isPackage) {
+      const packageTests = test.tests || [];
+      packageTests.forEach((pkgTest, index) => {
+        if (index !== 0) doc.addPage(); // Add new page after first test
 
-    autoTable(doc, {
-      head: [tableHeaders],
-      body: tableData,
-      theme: "plain",
-      styles: { fontSize: 9, cellPadding: 3 },
-      headStyles: { lineWidth: 0 },
-      margin: { top: 95, left: marginX, right: marginX, bottom: 40 },
-      showHead: "everyPage",
+        // Prepare table data for this test
+        const tableHeaders = [
+          "Parameter",
+          "Result",
+          "Unit",
+          "Reference Range(s)",
+          "Method",
+        ];
+        // Find results for this pkgTest from packageTestsResults if available
+        const testResult = packageTestsResults.find((t) => t.id === pkgTest.id);
+        console.log("testResult", testResult);
+        const testValues = testResult?.results || {};
+        const testInterpretation = testResult?.interpretation || "";
 
-      willDrawPage: () => {
-        if (includeLetterhead && LETTERHEAD_URL) {
-          doc.addImage(LETTERHEAD_URL, "PNG", 0, 0, pageWidth, pageHeight, undefined, "FAST");
+        const tableData = pkgTest.parameters.map((param) => [
+          param.name || "--",
+          testValues[param.name] || "--",
+          param.unit || "--",
+          param.referenceRanges?.length
+            ? param.referenceRanges
+                .map((r) => `${r.group}: ${r.range}`)
+                .join("\n")
+            : "--",
+          pkgTest.methodology || "--",
+        ]);
+
+        // Draw table
+        autoTable(doc, {
+          head: [tableHeaders],
+          body: tableData,
+          theme: "plain",
+          styles: { fontSize: 9, cellPadding: 3 },
+          headStyles: { lineWidth: 0 },
+          margin: { top: 95, left: marginX, right: marginX, bottom: 40 },
+          showHead: "everyPage",
+
+          willDrawPage: () => {
+            const group = patient.tests.find(
+              (g) => g.requestDate === selectedDate
+            );
+            const collectionDateRaw = group
+              ? group.collectionDate.split("T")
+              : null;
+
+            const reportDateRaw = testResult?.reportDate;
+            const reportDate = reportDateRaw
+              ? formatDateSimple(reportDateRaw)
+              : "N/A";
+            const includeLetterhead = true;
+            if (includeLetterhead && LETTERHEAD_URL) {
+              doc.addImage(
+                LETTERHEAD_URL,
+                "PNG",
+                0,
+                0,
+                pageWidth,
+                pageHeight,
+                undefined,
+                "FAST"
+              );
+            }
+
+            let cursorY = 60;
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(12);
+
+            doc.text(`Patient Name: ${patient.name}`, marginX, cursorY);
+            cursorY += lineSpacing;
+            doc.text(
+              `Age/Sex: ${patient.age} / ${patient.gender}`,
+              marginX,
+              cursorY
+            );
+            doc.text(`ID: ${patient.patientId}`, margin2X, cursorY);
+            cursorY += lineSpacing;
+            doc.text(`Address: ${patient.address}`, marginX, cursorY);
+            doc.text(`Sample Type: ${pkgTest.specimenType}`, margin2X, cursorY);
+            cursorY += lineSpacing;
+            doc.text(`Ref. By Doctor: ${patient.doctor}`, marginX, cursorY);
+            doc.text(
+              `Collection Date: ${collectionDateRaw}`,
+              margin2X,
+              cursorY
+            );
+            cursorY += lineSpacing;
+            doc.text(`Report Date: ${reportDate}`, margin2X, cursorY);
+            cursorY += lineSpacing * 2;
+            doc.setFont("helvetica", "bold");
+            doc.text(pkgTest.testName + " Report", pageWidth / 2, cursorY, {
+              align: "center",
+            });
+          },
+        });
+
+        // Signature
+        let finalY = doc.lastAutoTable.finalY || pageHeight - 60;
+
+        if (testInterpretation && testInterpretation.trim()) {
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(11);
+          doc.text("Interpretation:", marginX, finalY + 12);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(10);
+          const interpLines = doc.splitTextToSize(
+            testInterpretation,
+            pageWidth - 2 * marginX
+          );
+          doc.text(interpLines, marginX, finalY + 18);
+          finalY += 16 + interpLines.length * 6;
         }
 
-        let cursorY = 60;
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(12);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text("Signature", pageWidth - marginX, finalY + 20, {
+          align: "right",
+        });
 
-        doc.text(`Patient Name: ${patient.name}`, marginX, cursorY);
-        cursorY += lineSpacing;
-        doc.text(`Age/Sex: ${patient.age} / ${patient.gender}`, marginX, cursorY);
-        doc.text(`ID: ${patient.patientId}`, margin2X, cursorY);
-        cursorY += lineSpacing;
-        doc.text(`Address: ${patient.address}`, marginX, cursorY);
-        doc.text(`Sample Type: ${test.specimenType}`, margin2X, cursorY);
-        cursorY += lineSpacing;
-        doc.text(`Ref. By Doctor: ${patient.doctor}`, marginX, cursorY);
-        doc.text(
-          `Report Date: ${new Date().toLocaleDateString("en-IN", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-          })}`,
-          margin2X,
-          cursorY
-        );
-        cursorY += lineSpacing * 2;
+        if (signatureName) {
+          doc.setFont("cursive", "normal");
+          doc.setFontSize(12);
+          doc.text(signatureName, pageWidth - marginX, finalY + 25, {
+            align: "right",
+          });
+        }
+
+        // Page numbers
+        const totalPages = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+          doc.setPage(i);
+          doc.setFontSize(8);
+          doc.text(
+            `Page ${i} of ${totalPages}`,
+            pageWidth / 2,
+            pageHeight - 5,
+            { align: "center" }
+          );
+        }
+      });
+    } else {
+      // prepare table
+      const tableHeaders = [
+        "Parameter",
+        "Result",
+        "Unit",
+        "Reference Range(s)",
+        "Method",
+      ];
+      const tableData = test.parameters.map((param) => [
+        param.name || "--",
+        values[param.name] || "--",
+        param.unit || "--",
+        param.referenceRanges?.length
+          ? param.referenceRanges
+              .map((r) => `${r.group}: ${r.range}`)
+              .join("\n")
+          : "--",
+        test.methodology || "--",
+      ]);
+
+      autoTable(doc, {
+        head: [tableHeaders],
+        body: tableData,
+        theme: "plain",
+        styles: { fontSize: 9, cellPadding: 3 },
+        headStyles: { lineWidth: 0 },
+        margin: { top: 95, left: marginX, right: marginX, bottom: 40 },
+        showHead: "everyPage",
+
+        willDrawPage: () => {
+          if (includeLetterhead && LETTERHEAD_URL) {
+            doc.addImage(
+              LETTERHEAD_URL,
+              "PNG",
+              0,
+              0,
+              pageWidth,
+              pageHeight,
+              undefined,
+              "FAST"
+            );
+          }
+
+          let cursorY = 60;
+          doc.setTextColor(0, 0, 0);
+          doc.setFontSize(12);
+
+          doc.text(`Patient Name: ${patient.name}`, marginX, cursorY);
+          cursorY += lineSpacing;
+          doc.text(
+            `Age/Sex: ${patient.age} / ${patient.gender}`,
+            marginX,
+            cursorY
+          );
+          doc.text(`ID: ${patient.patientId}`, margin2X, cursorY);
+          cursorY += lineSpacing;
+          doc.text(`Address: ${patient.address}`, marginX, cursorY);
+          doc.text(`Sample Type: ${test.specimenType}`, margin2X, cursorY);
+          cursorY += lineSpacing;
+          doc.text(`Ref. By Doctor: ${patient.doctor}`, marginX, cursorY);
+
+          const group = patient.tests.find(
+            (g) => g.requestDate === selectedDate
+          );
+          const collectionDateRaw = group
+            ? group.collectionDate.split("T")
+            : null;
+
+          // Report Date from test (assuming test.reportDate is stored)
+          const testInGroup = group.testItems.find((t) => t.id === test.id);
+          const reportDateRaw = testInGroup ? testInGroup.reportDate : null;
+          const reportDate = reportDateRaw
+            ? formatDateSimple(reportDateRaw)
+            : "N/A";
+
+          doc.text(`Collection Date: ${collectionDateRaw}`, margin2X, cursorY);
+          cursorY += lineSpacing;
+          doc.text(`Report Date: ${reportDate}`, margin2X, cursorY);
+          cursorY += lineSpacing * 2;
+          doc.setFont("helvetica", "bold");
+          doc.text(test.testName + " Report", pageWidth / 2, cursorY, {
+            align: "center",
+          });
+        },
+      });
+
+      // Signature
+      let finalY = doc.lastAutoTable.finalY || pageHeight - 60;
+
+      if (interpretation && interpretation.trim()) {
         doc.setFont("helvetica", "bold");
-        doc.text(test.testName + " Report", pageWidth / 2, cursorY, { align: "center" });
-      },
-    });
+        doc.setFontSize(11);
+        doc.text("Interpretation:", marginX, finalY + 12);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        const interpLines = doc.splitTextToSize(
+          interpretation,
+          pageWidth - 2 * marginX
+        );
+        doc.text(interpLines, marginX, finalY + 18);
+        finalY += 16 + interpLines.length * 6;
+      }
 
-    // Signature
-    let finalY = doc.lastAutoTable.finalY || pageHeight - 60;
-
-    if (interpretation && interpretation.trim()) {
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.text("Interpretation:", marginX, finalY + 12);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
-      const interpLines = doc.splitTextToSize(interpretation, pageWidth - 2 * marginX);
-      doc.text(interpLines, marginX, finalY + 18);
-      finalY += 16 + interpLines.length * 6;
-    }
+      doc.text("Signature", pageWidth - marginX, finalY + 20, {
+        align: "right",
+      });
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.text("Signature", pageWidth - marginX, finalY + 20, { align: "right" });
+      if (signatureName) {
+        doc.setFont("cursive", "normal");
+        doc.setFontSize(12);
+        doc.text(signatureName, pageWidth - marginX, finalY + 25, {
+          align: "right",
+        });
+      }
 
-    if (signatureName) {
-      doc.setFont("cursive", "normal");
-      doc.setFontSize(12);
-      doc.text(signatureName, pageWidth - marginX, finalY + 25, { align: "right" });
-    }
-
-    // Page numbers
-    const totalPages = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 5, { align: "center" });
+      // Page numbers
+      const totalPages = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 5, {
+          align: "center",
+        });
+      }
     }
 
     if (preview) {
@@ -952,22 +1238,25 @@ export default function EnterTestResult() {
       setPreviewUrl(blobUrl);
       setShowPreview(true);
     } else {
-      const filename = `${patient.name || "Report"}_${test.testName}${signatureName ? "_signed" : ""}.pdf`;
+      const filename = `${patient.name || "Report"}_${
+        isPackage ? test.name : test.testName
+      }${signatureName ? "_signed" : ""}.pdf`;
       doc.save(filename);
     }
   };
 
-
   async function saveUsedReagents() {
-    const filteredUsage = usageList.filter(u => u.itemId && u.quantity);
+    const filteredUsage = usageList.filter((u) => u.itemId && u.quantity);
     if (filteredUsage.length === 0) {
-      alert('Please enter usage for at least one reagent.');
+      alert("Please enter usage for at least one reagent.");
       return;
     }
     // Validate quantities do not exceed available stock
     for (const usage of filteredUsage) {
-      const invItem = inventory.find(i => i.id === usage.itemId);
-      const available = invItem ? invItem.batches.reduce((a, b) => a + Number(b.quantity || 0), 0) : 0;
+      const invItem = inventory.find((i) => i.id === usage.itemId);
+      const available = invItem
+        ? invItem.batches.reduce((a, b) => a + Number(b.quantity || 0), 0)
+        : 0;
       if (Number(usage.quantity) > available) {
         alert(`Usage for ${invItem.item} exceeds available stock.`);
         return;
@@ -976,36 +1265,39 @@ export default function EnterTestResult() {
     // Proceed to API call (similar to your saveInventory function)
     try {
       const res = await fetch(`http://localhost:5000/inventory/deduct-usage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usage: filteredUsage, testId, patientId })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ usage: filteredUsage, testId, patientId }),
       });
       if (res.ok) {
-        alert('Inventory updated successfully.');
-        setUsageList([{ itemId: '', quantity: '' }]);
+        alert("Inventory updated successfully.");
+        setUsageList([{ itemId: "", quantity: "" }]);
         // refetch inventory to update UI
-        const invRes = await fetch('http://localhost:5000/inventory');
+        const invRes = await fetch("http://localhost:5000/inventory");
         const invData = await invRes.json();
         setInventory(invData.inventory || []);
       } else {
-        alert('Failed to update inventory.');
+        alert("Failed to update inventory.");
       }
     } catch (error) {
-      alert('Error updating inventory.');
+      alert("Error updating inventory.");
       console.error(error);
     }
   }
 
   return (
-    <div className="flex h-screen flex-col bg-gray-50 font-sans" style={{
-      "--brand-color": "#008080",
-      "--background-color": "#f7f9fc",
-      "--surface-color": "#ffffff",
-      "--text-primary": "#111518",
-      "--text-secondary": "#637988",
-      "--border-color": "#D3D3D3",
-      fontFamily: '"Public Sans", sans-serif',
-    }}>
+    <div
+      className="flex h-screen flex-col bg-gray-50 font-sans"
+      style={{
+        "--brand-color": "#008080",
+        "--background-color": "#f7f9fc",
+        "--surface-color": "#ffffff",
+        "--text-primary": "#111518",
+        "--text-secondary": "#637988",
+        "--border-color": "#D3D3D3",
+        fontFamily: '"Public Sans", sans-serif',
+      }}
+    >
       {/* <header className="sticky top-0 z-10 flex items-center justify-between border-b border-solid border-[var(--border-color)] bg-[var(--surface-color)] px-6 py-3 shadow-sm sm:px-10">
         <div className="flex items-center gap-4">
           <button
@@ -1034,8 +1326,9 @@ export default function EnterTestResult() {
       <div className="relative flex h-screen overflow-hidden">
         {/* Sidebar and overlay */}
         <div
-          className={`md:relative fixed md:h-full h-screen inset-y-0 left-0 z-30 w-64 bg-white border-r border-[var(--border-color)] shadow-lg transform transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-            }`}
+          className={`md:relative fixed md:h-full h-screen inset-y-0 left-0 z-30 w-64 bg-white border-r border-[var(--border-color)] shadow-lg transform transition-transform duration-300 ease-in-out ${
+            sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+          }`}
         >
           <Sidebar />
         </div>
@@ -1050,307 +1343,520 @@ export default function EnterTestResult() {
 
         {/* Main content */}
         <main className="flex-grow bg-[#f0f4f7] overflow-auto p-6">
-
           <header className="flex items-center justify-between mb-8">
-              <button
-                className="md:hidden p-2 -ml-2 text-[var(--text-primary)]"
-                aria-label="Toggle sidebar"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
+            <button
+              className="md:hidden p-2 -ml-2 text-[var(--text-primary)]"
+              aria-label="Toggle sidebar"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                <svg
-                  className="h-6 w-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    d="M4 6h16M4 12h16M4 18h16"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                  />
-                </svg>
-              </button>
+                <path
+                  d="M4 6h16M4 12h16M4 18h16"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                />
+              </svg>
+            </button>
 
-              <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">
-                Patient Test Result
-              </h1>
+            <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">
+              Patient Test Result
+            </h1>
 
-              <div className="flex items-center gap-4">
-                <div className="relative group flex items-center">
-                  <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center cursor-pointer">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="w-7 h-7 text-gray-500"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-3.31 0-6 2.01-6 4.5V20h12v-1.5c0-2.49-2.69-4.5-6-4.5z"
-                      />
-                    </svg>
-                  </span>
-                  <div
-                    className="absolute right-full mr-2 bottom-1/2 translate-y-1/2 bg-gray-800 text-white text-xs rounded-md px-3 py-2 whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity shadow-lg z-50"
-                    style={{ minWidth: "5rem" }}
+            <div className="flex items-center gap-4">
+              <div className="relative group flex items-center">
+                <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center cursor-pointer">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-7 h-7 text-gray-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    aria-hidden="true"
                   >
-                    {userName || "No Name"}
-                  </div>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-3.31 0-6 2.01-6 4.5V20h12v-1.5c0-2.49-2.69-4.5-6-4.5z"
+                    />
+                  </svg>
+                </span>
+                <div
+                  className="absolute right-full mr-2 bottom-1/2 translate-y-1/2 bg-gray-800 text-white text-xs rounded-md px-3 py-2 whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity shadow-lg z-50"
+                  style={{ minWidth: "5rem" }}
+                >
+                  {userName || "No Name"}
                 </div>
               </div>
-            </header>
+            </div>
+          </header>
 
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <div className="w-12 h-12 border-4 rounded-full border-gray-300 border-t-[var(--brand-color)] animate-spin"></div>
             </div>
           ) : (
-
-          <>
-            
-          {/* Patient & Test Info */}
-          <div className="max-w-4xl mx-auto bg-white rounded shadow p-6">
-            <h2 className="text-3xl mb-6 font-bold">{test.testName}</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div><strong>Patient Name:</strong> {patient.name}</div>
-              <div><strong>Age / Sex:</strong> {patient.age} / {patient.gender}</div>
-              <div><strong>Patient ID:</strong> {patient.patientId}</div>
-              <div><strong>Doctor:</strong> {patient.doctor}</div>
-              <div><strong>Contact:</strong> {patient.contact}</div>
-              <div><strong>Sample Collection:</strong> {patient.date} {patient.time}</div>
-              <div><strong>Test Category:</strong> {test.category}</div>
-            </div>
-
-            {/* Parameters Form */}
-            <form className="mt-6 space-y-4">
-              {test.parameters.map((p, i) => (
-                <div key={i} className="flex flex-col sm:flex-row sm:items-center gap-4">
-                  <label className="flex-grow font-medium">{p.name} ({p.unit || "Unit"})</label>
-                  <div className="w-1/3 text-gray-500">
-                    {p.referenceRanges?.length
-                      ? p.referenceRanges.map((r, i) => (
-                        <div key={i}>{r.group}: {r.range}</div>
-                      ))
-                      : "--"}
+            <>
+              {test && isPackage === true ? (
+                <div className="max-w-4xl mx-auto bg-white rounded shadow p-6">
+                  <h2 className="text-3xl mb-6 font-bold">
+                    {test.name} (Package)
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                      <strong>Patient Name:</strong> {patient.name}
+                    </div>
+                    <div>
+                      <strong>Age / Sex:</strong> {patient.age} /{" "}
+                      {patient.gender}
+                    </div>
+                    <div>
+                      <strong>Patient ID:</strong> {patient.patientId}
+                    </div>
+                    <div>
+                      <strong>Ref. By Doctor:</strong> {patient.doctor}
+                    </div>
+                    <div>
+                      <strong>Contact:</strong> {patient.contact}
+                    </div>
+                    {/* <div><strong>Sample Collection:</strong> {patient.date} {patient.time}</div>
+                  <div><strong>Test Category:</strong> {test.category}</div> */}
                   </div>
-                  <input
-                    type="text"
-                    value={values[p.name] || ""}
-                    onChange={e => handleValueChange(p.name, e.target.value)}
-                    className="border border-gray-300 rounded px-3 py-2 w-full sm:w-1/2"
-                  />
+                  {test?.tests?.map((pkgTest) => (
+                    <div
+                      key={pkgTest.id}
+                      className={`border p-4 mb-4 rounded shadow ${
+                        packageTestsResults.find((t) => t.id === pkgTest.id)
+                          ?.status === "Completed"
+                          ? "bg-green-100"
+                          : "bg-white"
+                      } `}
+                    >
+                      <div
+                        className="flex flex-col justify-between items-start cursor-pointer"
+                        onClick={() => toggleTestForm(pkgTest.id)}
+                      >
+                        <h3 className="font-semibold">{pkgTest.testName}</h3>
+                        <p>
+                          <strong>Sample Collection:</strong> {patient.date}{" "}
+                          {patient.time}
+                        </p>
+                        <p>
+                          <strong>Test Category:</strong> {pkgTest.category}
+                        </p>
+                        <p>
+                          <strong>Test Status:</strong>{" "}
+                          {packageTestsResults.find((t) => t.id === pkgTest.id)
+                            ?.status === "Completed"
+                            ? "Completed"
+                            : "Pending"}
+                        </p>
+                      </div>
+                      {openTestFormId === pkgTest.id && (
+                        <>
+                          <form className="mt-4 space-y-4">
+                            {pkgTest.parameters.map((p, i) => (
+                              <div
+                                key={i}
+                                className="flex flex-col sm:flex-row sm:items-center gap-4"
+                              >
+                                <label className="flex-grow font-medium">
+                                  {p.name} ({p.unit || "Unit"})
+                                </label>
+                                <div className="w-1/3 text-gray-500">
+                                  {p.referenceRanges?.length
+                                    ? p.referenceRanges.map((r, i) => (
+                                        <div key={i}>
+                                          {r.group}: {r.range}
+                                        </div>
+                                      ))
+                                    : "--"}
+                                </div>
+                                <input
+                                  type="text"
+                                  value={values[p.name] || ""}
+                                  onChange={(e) =>
+                                    handleValueChange(p.name, e.target.value)
+                                  }
+                                  className="border border-gray-300 rounded px-3 py-2 w-full sm:w-1/2"
+                                />
+                              </div>
+                            ))}
+                            {/* Interpretation */}
+                            <div>
+                              <label className="block mb-2 font-semibold">
+                                Interpretation
+                              </label>
+                              <textarea
+                                value={interpretation}
+                                onChange={(e) =>
+                                  setInterpretation(e.target.value)
+                                }
+                                rows={4}
+                                className="w-full border border-gray-300 rounded p-2"
+                                placeholder="Enter interpretation or comments here"
+                              />
+                            </div>
+
+                            {/* Save Results Button */}
+                            <div className="flex justify-end space-x-4">
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    const res = await fetch(
+                                      `http://localhost:5000/patients/${patientId}/tests/${testId}/${openTestFormId}/results`,
+                                      {
+                                        method: "PUT",
+                                        headers: {
+                                          "Content-Type": "application/json",
+                                        },
+                                        body: JSON.stringify({
+                                          results: values,
+                                          interpretation,
+                                          selectedDate,
+                                        }),
+                                      }
+                                    );
+                                    if (res.ok) {
+                                      alert("Results saved successfully.");
+
+                                      const updatedResults = await fetch(`http://localhost:5000/patients/${patientId}/packages/${testId}/${selectedDate}/results`);
+                                      const updatedData = await updatedResults.json();
+                                      setPackageTestsResults(updatedData.testsResults);
+                                    } else {
+                                      alert("Failed to save results.");
+                                    }
+                                  } catch {
+                                    alert("Error saving results.");
+                                  }
+                                }}
+                                className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+                              >
+                                Save Results
+                              </button>
+                            </div>
+                          </form>
+                          <div className="max-w-4xl mx-auto bg-white rounded shadow p-6 mt-8">
+                            <h2 className="text-2xl font-semibold mb-4">
+                              Record Reagent Usage
+                            </h2>
+                            <ReagentUsageForm
+                              inventory={inventory}
+                              usageList={usageList}
+                              setUsageList={setUsageList}
+                            />
+                            <button
+                              className="mt-4 bg-green-600 text-white px-6 py-2 rounded"
+                              onClick={saveUsedReagents} // Implement saveUsageFunction to make API call for usage saving
+                            >
+                              Save Usage
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
+              ) : (
+                <>
+                  {/* Patient & Test Info */}
+                  <div className="max-w-4xl mx-auto bg-white rounded shadow p-6">
+                    <h2 className="text-3xl mb-6 font-bold">{test.testName}</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div>
+                        <strong>Patient Name:</strong> {patient.name}
+                      </div>
+                      <div>
+                        <strong>Age / Sex:</strong> {patient.age} /{" "}
+                        {patient.gender}
+                      </div>
+                      <div>
+                        <strong>Patient ID:</strong> {patient.patientId}
+                      </div>
+                      <div>
+                        <strong>Doctor:</strong> {patient.doctor}
+                      </div>
+                      <div>
+                        <strong>Contact:</strong> {patient.contact}
+                      </div>
+                      <div>
+                        <strong>Sample Collection:</strong> {patient.date}{" "}
+                        {patient.time}
+                      </div>
+                      <div>
+                        <strong>Test Category:</strong> {test.category}
+                      </div>
+                    </div>
 
-              {/* Interpretation */}
-              <div>
-                <label className="block mb-2 font-semibold">Interpretation</label>
-                <textarea
-                  value={interpretation}
-                  onChange={e => setInterpretation(e.target.value)}
-                  rows={4}
-                  className="w-full border border-gray-300 rounded p-2"
-                  placeholder="Enter interpretation or comments here"
-                />
-              </div>
+                    {/* Parameters Form */}
+                    <form className="mt-6 space-y-4">
+                      {test.parameters.map((p, i) => (
+                        <div
+                          key={i}
+                          className="flex flex-col sm:flex-row sm:items-center gap-4"
+                        >
+                          <label className="flex-grow font-medium">
+                            {p.name} ({p.unit || "Unit"})
+                          </label>
+                          <div className="w-1/3 text-gray-500">
+                            {p.referenceRanges?.length
+                              ? p.referenceRanges.map((r, i) => (
+                                  <div key={i}>
+                                    {r.group}: {r.range}
+                                  </div>
+                                ))
+                              : "--"}
+                          </div>
+                          <input
+                            type="text"
+                            value={values[p.name] || ""}
+                            onChange={(e) =>
+                              handleValueChange(p.name, e.target.value)
+                            }
+                            className="border border-gray-300 rounded px-3 py-2 w-full sm:w-1/2"
+                          />
+                        </div>
+                      ))}
 
-              {/* Save Results Button */}
-              <div className="flex justify-end space-x-4">
+                      {/* Interpretation */}
+                      <div>
+                        <label className="block mb-2 font-semibold">
+                          Interpretation
+                        </label>
+                        <textarea
+                          value={interpretation}
+                          onChange={(e) => setInterpretation(e.target.value)}
+                          rows={4}
+                          className="w-full border border-gray-300 rounded p-2"
+                          placeholder="Enter interpretation or comments here"
+                        />
+                      </div>
+
+                      {/* Save Results Button */}
+                      <div className="flex justify-end space-x-4">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              const res = await fetch(
+                                `http://localhost:5000/patients/${patientId}/tests/${testId}/results`,
+                                {
+                                  method: "PUT",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                  },
+                                  body: JSON.stringify({
+                                    results: values,
+                                    interpretation,
+                                    selectedDate,
+                                  }),
+                                }
+                              );
+                              if (res.ok) alert("Results saved successfully.");
+                              else alert("Failed to save results.");
+                            } catch {
+                              alert("Error saving results.");
+                            }
+                          }}
+                          className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+                        >
+                          Save Results
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+
+                  {/* Reagent Usage */}
+                  <div className="max-w-4xl mx-auto bg-white rounded shadow p-6 mt-8">
+                    <h2 className="text-2xl font-semibold mb-4">
+                      Record Reagent Usage
+                    </h2>
+                    <ReagentUsageForm
+                      inventory={inventory}
+                      usageList={usageList}
+                      setUsageList={setUsageList}
+                    />
+                    <button
+                      className="mt-4 bg-green-600 text-white px-6 py-2 rounded"
+                      onClick={saveUsedReagents} // Implement saveUsageFunction to make API call for usage saving
+                    >
+                      Save Usage
+                    </button>
+                  </div>
+                </>
+              )}
+
+              <div className="max-w-4xl mx-auto flex justify-end gap-4 mt-8">
                 <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      const res = await fetch(`http://localhost:5000/patients/${patientId}/tests/${testId}/results`, {
-                        method: "PUT",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ results: values, interpretation }),
-                      });
-                      if (res.ok) alert("Results saved successfully.");
-                      else alert("Failed to save results.");
-                    } catch {
-                      alert("Error saving results.");
-                    }
-                  }}
-                  className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+                  onClick={() =>
+                    navigate("/patients", {
+                      state: { patientId, fromResults: true },
+                    })
+                  }
+                  className="px-6 py-2 rounded bg-gray-500 text-white font-bold hover:bg-gray-600"
                 >
-                  Save Results
+                  Back
+                </button>
+                <button
+                  className="px-6 py-2 rounded bg-green-600 text-white font-bold hover:bg-green-700"
+                  onClick={() => setShowSignatureDialog(true)}
+                >
+                  Download PDF
                 </button>
               </div>
-            </form>
-          </div>
 
-          {/* Reagent Usage */}
-          <div className="max-w-4xl mx-auto bg-white rounded shadow p-6 mt-8">
-            <h2 className="text-2xl font-semibold mb-4">Record Reagent Usage</h2>
-            <ReagentUsageForm inventory={inventory} usageList={usageList} setUsageList={setUsageList} />
-            <button
-              className="mt-4 bg-green-600 text-white px-6 py-2 rounded"
-              onClick={saveUsedReagents} // Implement saveUsageFunction to make API call for usage saving
-            >
-              Save Usage
-            </button>
-          </div>
+              {/* Signature Selection Modal */}
+              {showSignatureDialog && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+                  <div className="bg-white p-6 rounded shadow max-w-sm w-full">
+                    <h3 className="text-lg font-semibold mb-4">
+                      Include Signature Name in Report?
+                    </h3>
+                    <div className="mb-4 flex gap-4">
+                      <label className="inline-flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          checked={includeSignature}
+                          onChange={() => {
+                            setIncludeSignature(true);
+                            const firstSig = signatures[0];
+                            setSelectedSignatureId(firstSig?.id || null);
+                            setSelectedSignatureName(firstSig?.name || "");
+                          }}
+                        />
+                        <span>Yes</span>
+                      </label>
+                      <label className="inline-flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          checked={!includeSignature}
+                          onChange={() => {
+                            setIncludeSignature(false);
+                            setSelectedSignatureId(null);
+                            setSelectedSignatureName("");
+                          }}
+                        />
+                        <span>No</span>
+                      </label>
+                    </div>
 
-          <div className="max-w-4xl mx-auto flex justify-end gap-4 mt-8">
-            <button
-              onClick={() => navigate("/patients", { state: { patientId, fromResults: true } })}
-              className="px-6 py-2 rounded bg-gray-500 text-white font-bold hover:bg-gray-600"
-            >
-              Back
-            </button>
-            <button
-              className="px-6 py-2 rounded bg-green-600 text-white font-bold hover:bg-green-700"
-              onClick={() => setShowSignatureDialog(true)}
-            >
-              Download PDF
-            </button>
-          </div>
+                    <div className="mb-4 flex gap-4">
+                      <label className="inline-flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={includeLetterhead}
+                          onChange={(e) =>
+                            setIncludeLetterhead(e.target.checked)
+                          }
+                        />
+                        <span>Include Letterhead Background</span>
+                      </label>
+                    </div>
 
-          {/* Signature Selection Modal */}
-          {showSignatureDialog && (
-            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
-              <div className="bg-white p-6 rounded shadow max-w-sm w-full">
-                <h3 className="text-lg font-semibold mb-4">Include Signature Name in Report?</h3>
-                <div className="mb-4 flex gap-4">
-                  <label className="inline-flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      checked={includeSignature}
-                      onChange={() => {
-                        setIncludeSignature(true);
-                        const firstSig = signatures[0];
-                        setSelectedSignatureId(firstSig?.id || null);
-                        setSelectedSignatureName(firstSig?.name || "");
-                      }}
-                    />
-                    <span>Yes</span>
-                  </label>
-                  <label className="inline-flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      checked={!includeSignature}
-                      onChange={() => {
-                        setIncludeSignature(false);
-                        setSelectedSignatureId(null);
-                        setSelectedSignatureName("");
-                      }}
-                    />
-                    <span>No</span>
-                  </label>
+                    {includeSignature && (
+                      <select
+                        className="w-full border rounded p-2 mb-4"
+                        value={selectedSignatureId || ""}
+                        onChange={(e) => {
+                          const id = e.target.value;
+                          setSelectedSignatureId(id);
+                          const sig = signatures.find((s) => s.id === id);
+                          setSelectedSignatureName(sig?.name || "");
+                        }}
+                      >
+                        {signatures.map((sig) => (
+                          <option key={sig.id} value={sig.id}>
+                            {sig.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    <div className="flex justify-end space-x-4">
+                      <button
+                        className="btn btn-secondary"
+                        onClick={() => setShowSignatureDialog(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="btn btn-primary"
+                        disabled={includeSignature && !selectedSignatureId}
+                        onClick={() => {
+                          setShowSignatureDialog(false);
+                          generatePDFWithAutoTable(
+                            includeSignature ? selectedSignatureName : "",
+                            true, // ✅ preview instead of immediate download
+                            interpretation,
+                            includeLetterhead
+                          );
+                        }}
+                      >
+                        Continue
+                      </button>
+                    </div>
+                  </div>
                 </div>
-
-                <div className="mb-4 flex gap-4">
-                  <label className="inline-flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={includeLetterhead}
-                      onChange={e => setIncludeLetterhead(e.target.checked)}
-                    />
-                    <span>Include Letterhead Background</span>
-                  </label>
+              )}
+              {showPreview && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+                  <div className="bg-white rounded shadow-lg max-w-4xl w-full h-[90vh] flex flex-col">
+                    <div className="flex justify-between items-center p-4 border-b">
+                      <h2 className="text-lg font-semibold">Report Preview</h2>
+                      <button
+                        className="text-red-600 font-bold"
+                        onClick={() => setShowPreview(false)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      {previewUrl && (
+                        <iframe
+                          src={previewUrl}
+                          title="PDF Preview"
+                          className="w-full h-full"
+                        />
+                      )}
+                    </div>
+                    <div className="flex justify-end p-4 border-t space-x-4">
+                      <button
+                        className="px-4 py-2 rounded bg-gray-500 text-white"
+                        onClick={() => setShowPreview(false)}
+                      >
+                        Close
+                      </button>
+                      <button
+                        className="px-4 py-2 rounded bg-green-600 text-white"
+                        onClick={() => {
+                          if (!testGroupFromState?.paymentInfo?.cleared) {
+                            alert("Payment not cleared yet.");
+                            return;
+                          }
+                          generatePDFWithAutoTable(
+                            includeSignature ? selectedSignatureName : "",
+                            false, // ✅ trigger actual download
+                            interpretation,
+                            includeLetterhead
+                          );
+                        }}
+                      >
+                        Download
+                      </button>
+                    </div>
+                  </div>
                 </div>
-
-                {includeSignature && (
-                  <select
-                    className="w-full border rounded p-2 mb-4"
-                    value={selectedSignatureId || ""}
-                    onChange={(e) => {
-                      const id = e.target.value;
-                      setSelectedSignatureId(id);
-                      const sig = signatures.find((s) => s.id === id);
-                      setSelectedSignatureName(sig?.name || "");
-                    }}
-                  >
-                    {signatures.map((sig) => (
-                      <option key={sig.id} value={sig.id}>{sig.name}</option>
-                    ))}
-                  </select>
-                )}
-                <div className="flex justify-end space-x-4">
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => setShowSignatureDialog(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    className="btn btn-primary"
-                    disabled={includeSignature && !selectedSignatureId}
-                    onClick={() => {
-                      setShowSignatureDialog(false);
-                      generatePDFWithAutoTable(
-                        includeSignature ? selectedSignatureName : "",
-                        true, // ✅ preview instead of immediate download
-                        interpretation,
-                        includeLetterhead
-                      );
-                    }}
-                  >
-                    Continue
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          {showPreview && (
-            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-              <div className="bg-white rounded shadow-lg max-w-4xl w-full h-[90vh] flex flex-col">
-                <div className="flex justify-between items-center p-4 border-b">
-                  <h2 className="text-lg font-semibold">Report Preview</h2>
-                  <button
-                    className="text-red-600 font-bold"
-                    onClick={() => setShowPreview(false)}
-                  >
-                    ✕
-                  </button>
-                </div>
-                <div className="flex-1 overflow-hidden">
-                  {previewUrl && (
-                    <iframe
-                      src={previewUrl}
-                      title="PDF Preview"
-                      className="w-full h-full"
-                    />
-                  )}
-                </div>
-                <div className="flex justify-end p-4 border-t space-x-4">
-                  <button
-                    className="px-4 py-2 rounded bg-gray-500 text-white"
-                    onClick={() => setShowPreview(false)}
-                  >
-                    Close
-                  </button>
-                  <button
-                    className="px-4 py-2 rounded bg-green-600 text-white"
-                    onClick={() => {
-                      if (!testGroupFromState?.paymentInfo?.cleared) {
-                        alert("Payment not cleared yet.");
-                        return;
-                      }
-                      generatePDFWithAutoTable(
-                        includeSignature ? selectedSignatureName : "",
-                        false, // ✅ trigger actual download
-                        interpretation,
-                        includeLetterhead
-                      )
-                    }}
-                  >
-                    Download
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          </>
+              )}
+            </>
           )}
         </main>
       </div>
-    </div >
+    </div>
   );
 }

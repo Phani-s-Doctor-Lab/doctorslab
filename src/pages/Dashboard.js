@@ -120,14 +120,22 @@ const Dashboard = () => {
       try {
         const inventoryResp = await fetch("http://localhost:5000/inventory");
         const inventoryData = await inventoryResp.json();
-        costs = (inventoryData.inventory || []).reduce((sum, item) => {
-          return (
-            sum +
-            (item.batches
-              ? item.batches.reduce((s, b) => s + (Number(b.amount) || 0), 0)
-              : 0)
-          );
+
+        costs += (inventoryData.inventory || []).reduce((sum, item) => {
+          return sum + (item.batches ? item.batches.reduce((s, b) => s + (Number(b.amount) || 0), 0) : 0);
         }, 0);
+
+        // Fetch other expenses and sum their amounts
+        const otherExpensesResp = await fetch("http://localhost:5000/otherExpenses");
+        const otherExpensesData = await otherExpensesResp.json();
+
+        if (otherExpensesData.expenses) {
+          costs += otherExpensesData.expenses.reduce((sum, expense) => {
+            return sum + (Number(expense.amount) || 0);
+          }, 0);
+        }
+
+        console.log("Total combined costs:", costs);
       } catch {
         costs = 0;
       }
