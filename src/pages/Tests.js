@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
+import { toast } from 'react-toastify';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 // Package Modal component
 const PackageModal = ({
@@ -94,7 +97,7 @@ const PackageModal = ({
           <button
             className={`px-4 py-2 font-semibold ${
               activeTab === 0
-                ? "border-b-2 border-[var(--brand-color)] text-teal-700"
+                ? "border-b-2 border-[var(--brand-color)] text-[var(--brand-color)]"
                 : "text-gray-500"
             }`}
             onClick={() => setActiveTab(0)}
@@ -104,7 +107,7 @@ const PackageModal = ({
           <button
             className={`px-4 py-2 font-semibold ${
               activeTab === 1
-                ? "border-b-2 border-[var(--brand-color)] text-teal-700"
+                ? "border-b-2 border-[var(--brand-color)] text-[var(--brand-color)]"
                 : "text-gray-500"
             }`}
             onClick={() => setActiveTab(1)}
@@ -196,7 +199,7 @@ const PackageModal = ({
                 <span className="font-semibold">{selectedTests.length}</span>
               </div>
               <button
-                className="rounded-lg bg-[var(--brand-color)] text-white px-6 py-2 font-bold hover:bg-teal-900"
+                className="rounded-lg bg-[var(--brand-color)] text-white px-6 py-2 font-bold hover:bg-[var(--brand-color)]"
                 onClick={handleCreate}
                 disabled={selectedTests.length === 0}
               >
@@ -230,7 +233,7 @@ const Tests = () => {
   useEffect(() => {
     const fetchTests = async () => {
       try {
-        const res = await fetch("http://localhost:5000/tests");
+        const res = await fetch(`${BACKEND_URL}/tests`);
         const data = await res.json();
         setTests(data.tests || []);
       } catch (error) {
@@ -246,7 +249,7 @@ const Tests = () => {
     async function fetchPackages() {
       setLoadingPackages(true);
       try {
-        const res = await fetch("http://localhost:5000/packages");
+        const res = await fetch(`${BACKEND_URL}/packages`);
         const data = await res.json();
         setPackages(data.packages || []);
       } catch {
@@ -262,7 +265,7 @@ const Tests = () => {
     if (activeTab === 0) {
       // Fetch tests
       setLoadingTests(true);
-      fetch("http://localhost:5000/tests")
+      fetch(`${BACKEND_URL}/tests`)
         .then((res) => res.json())
         .then((data) => setTests(data.tests || []))
         .catch(() => setTests([]))
@@ -270,7 +273,7 @@ const Tests = () => {
     } else {
       // Fetch packages
       setLoadingPackages(true);
-      fetch("http://localhost:5000/packages")
+      fetch(`${BACKEND_URL}/packages`)
         .then((res) => res.json())
         .then((data) => setPackages(data.packages || []))
         .catch(() => setPackages([]))
@@ -290,7 +293,7 @@ const Tests = () => {
     packagePrice,
   }) => {
     if (selectedTests.length === 0) {
-      alert("Please select at least one test to create a package");
+      toast.warn("Please select at least one test");
       return;
     }
     try {
@@ -300,17 +303,17 @@ const Tests = () => {
         selectedTests,
         packagePrice,
       };
-      const response = await fetch("http://localhost:5000/packages", {
+      const response = await fetch(`${BACKEND_URL}/packages`, {
         method: editingPackage ? "PUT" : "POST", // PUT for update, POST for create
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       const data = await response.json();
       if (response.ok) {
-        alert(
-          `Package ${
-            editingPackage ? "updated" : "created"
-          } successfully with ID: ${data.package.id}`
+        toast.success(
+          editingPackage
+            ? "Package updated successfully!"
+            : "Package created successfully!"
         );
         setShowPackageModal(false);
         setEditingPackage(null);
@@ -320,17 +323,25 @@ const Tests = () => {
         } else {
           // refresh packages
           setLoadingPackages(true);
-          const refreshed = await fetch("http://localhost:5000/packages");
+          const refreshed = await fetch(`${BACKEND_URL}/packages`);
           const refreshedData = await refreshed.json();
           setPackages(refreshedData.packages || []);
           setLoadingPackages(false);
         }
       } else {
-        alert(`Error: ${data.error || "Unknown error"}`);
+        toast.error(
+          editingPackage
+            ? "Failed to update package. Please try again."
+            : "Failed to create package. Please try again."
+        );
       }
     } catch (error) {
       console.error(error);
-      alert("Failed to save package. Please try again.");
+      toast.error(
+        editingPackage
+          ? "Failed to update package. Please try again."
+          : "Failed to create package. Please try again." 
+      );
     }
   };
 
@@ -338,8 +349,8 @@ const Tests = () => {
     <div
       className="relative flex flex-col h-screen bg-[var(--background-color)]"
       style={{
-        "--brand-color": "#008080",
-        "--primary-light": "#e0f2f1",
+        "--brand-color": "#649ccd",
+        "--primary-light": "#d1e1f0",
         "--background-color": "#f7f9fc",
         "--surface-color": "#ffffff",
         "--text-primary": "#111518",
@@ -368,7 +379,7 @@ const Tests = () => {
         )}
 
         {/* Main Content */}
-        <main className="flex-grow bg-[#f0f4f7] overflow-auto p-6">
+        <main className="flex-grow bg-[#f0f5fa] overflow-auto p-6">
           <header className="flex items-center justify-between mb-8">
             <button
               className="md:hidden p-2 -ml-2 text-[var(--text-primary)]"
@@ -428,7 +439,7 @@ const Tests = () => {
               <button
                 className={`py-2 px-4 font-semibold ${
                   activeTab === 0
-                    ? "border-b-2 border-[var(--brand-color)] text-teal-700"
+                    ? "border-b-2 border-[var(--brand-color)] text-[var(--brand-color)]"
                     : "text-gray-500"
                 }`}
                 onClick={() => setActiveTab(0)}
@@ -438,7 +449,7 @@ const Tests = () => {
               <button
                 className={`py-2 px-4 font-semibold ${
                   activeTab === 1
-                    ? "border-b-2 border-[var(--brand-color)] text-teal-700"
+                    ? "border-b-2 border-[var(--brand-color)] text-[var(--brand-color)]"
                     : "text-gray-500"
                 }`}
                 onClick={() => setActiveTab(1)}
@@ -483,13 +494,13 @@ const Tests = () => {
                           </p>
                           <div className="flex gap-2 mt-2">
                             <button
-                              className="text-[var(--brand-color)] font-semibold hover:text-teal-700"
+                              className="text-[var(--brand-color)] font-semibold hover:text-[var(--brand-color)]"
                               onClick={() => navigate(`/view-test/${test.id}`)}
                             >
                               View
                             </button>
                             <button
-                              className="text-[var(--brand-color)] font-semibold hover:text-teal-700"
+                              className="text-[var(--brand-color)] font-semibold hover:text-[var(--brand-color)]"
                               onClick={() => navigate(`/edit-test/${test.id}`)}
                             >
                               Edit
@@ -503,7 +514,7 @@ const Tests = () => {
                     <button
                       type="button"
                       onClick={() => setShowPackageModal(true)}
-                      className="flex items-center gap-2 rounded-md border border-[var(--border-color)] bg-yellow-600 px-4 py-2 text-sm font-bold text-white hover:bg-yellow-700 transition-colors shadow-md"
+                      className="flex items-center gap-2 rounded-md border border-[var(--border-color)] bg-[#324e67] px-4 py-2 text-sm font-bold text-white hover:bg-[var(--brand-color)] transition-colors shadow-md"
                     >
                       <span className="material-icons text-base">
                         Create Package
@@ -512,7 +523,7 @@ const Tests = () => {
                     <button
                       type="button"
                       onClick={() => navigate("/add-test")}
-                      className="flex items-center gap-2 rounded-md border border-[var(--border-color)] bg-[var(--brand-color)] px-4 py-2 text-sm font-bold text-white hover:bg-teal-900 transition-colors shadow-md"
+                      className="flex items-center gap-2 rounded-md border border-[var(--border-color)] bg-[var(--brand-color)] px-4 py-2 text-sm font-bold text-white hover:bg-[#324e67] transition-colors shadow-md"
                     >
                       <span className="material-icons text-base">Add Test</span>
                     </button>
@@ -558,13 +569,13 @@ const Tests = () => {
                         </p>
                         <div className="flex gap-2 mt-2">
                           <button
-                            className="text-[var(--brand-color)] font-semibold hover:text-teal-700"
+                            className="text-[var(--brand-color)] font-semibold hover:text-[var(--brand-color)]"
                             onClick={() => navigate(`/view-package/${pkg.id}`)}
                           >
                             View
                           </button>
                           <button
-                            className="text-[var(--brand-color)] font-semibold hover:text-teal-700"
+                            className="text-[var(--brand-color)] font-semibold hover:text-[var(--brand-color)]"
                             onClick={() => handleEditPackage(pkg)}
                           >
                             Edit

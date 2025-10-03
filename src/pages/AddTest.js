@@ -123,7 +123,7 @@
 //     <div
 //       className="flex min-h-screen flex-col bg-gray-100 text-[var(--text-primary)]"
 //       style={{
-//         "--brand-color": "#008080",
+//         "--brand-color": "#649ccd",
 //         "--background-color": "#f7f9fc",
 //         "--surface-color": "#ffffff",
 //         "--text-primary": "#111518",
@@ -422,6 +422,7 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
+import { toast } from 'react-toastify';
 
 // Loading Spinner Component
 const LoadingSpinner = ({ size = "default" }) => {
@@ -455,6 +456,8 @@ export default function AddTestPage() {
 
   const isFromPatientForm = location.state?.fromPatientForm;
   const isFromPatientTestManager = location.state?.fromPatientTestManager;
+
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
   const [formData, setFormData] = useState({
     testName: "",
@@ -548,20 +551,28 @@ export default function AddTestPage() {
     }
   };
 
+  function formatTurnaroundTime(hours) {
+    const h = Number(hours);
+    if (!h || h <= 0) return "";
+    return h === 1 ? "1 hour" : `${h} hours`;
+  }
+
   // Submit form
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
 
+    const formattedTurnaround = formatTurnaroundTime(formData.turnaroundTime);
+
     const payload = {
       ...formData,
       price: Number(formData.price),
+      turnaroundTime: formattedTurnaround,
       parameters,
-      status: "active",
     };
 
     try {
-      const response = await fetch("http://localhost:5000/tests", {
+      const response = await fetch(`${BACKEND_URL}/tests`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -569,7 +580,7 @@ export default function AddTestPage() {
 
       const data = await response.json();
       if (response.ok) {
-        alert("Test added successfully!");
+        toast.success("Test added successfully!");
         handleDone(data.testId);
         // Reset form
         setFormData({
@@ -586,11 +597,11 @@ export default function AddTestPage() {
         });
         setParameters([{ name: "", unit: "", referenceRange: [] }]);
       } else {
-        alert("Error: " + data.error);
+        toast.error("Error: " + data.error);
       }
     } catch (error) {
       console.error("Error submitting test:", error);
-      alert("Something went wrong while adding the test.");
+      toast.error("Something went wrong while adding the test.");
     } finally {
       setSaving(false);
     }
@@ -608,7 +619,7 @@ export default function AddTestPage() {
     <div
       className="relative flex flex-col h-screen bg-[var(--background-color)]"
       style={{
-        "--brand-color": "#008080",
+        "--brand-color": "#649ccd",
         "--background-color": "#f7f9fc",
         "--surface-color": "#ffffff",
         "--text-primary": "#111518",
@@ -664,7 +675,7 @@ export default function AddTestPage() {
         )}
 
         {/* Main Content */}
-        <main className="flex-grow bg-[#f0f4f7] overflow-auto p-6">
+        <main className="flex-grow bg-[#f0f5fa] overflow-auto p-6">
 
           <header className="flex items-center justify-between mb-8">
               <button
@@ -763,19 +774,18 @@ export default function AddTestPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium mb-2">Category</label>
-                        <select
+                        <label className="block text-sm font-medium mb-2" htmlFor="category">
+                          Category
+                        </label>
+                        <input
+                          id="category"
+                          type="text"
                           value={formData.category}
                           onChange={(e) => handleChange("category", e.target.value)}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-[var(--brand-color)] focus:border-[var(--brand-color)]"
+                          placeholder="Enter category"
+                          className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-teal-500"
                           required
-                        >
-                          <option value="">Select category</option>
-                          <option>Hematology</option>
-                          <option>Biochemistry</option>
-                          <option>Microbiology</option>
-                          <option>Pathology</option>
-                        </select>
+                        />
                       </div>
                       <div>
                         <label className="block text-sm font-medium mb-2">Price</label>
@@ -792,17 +802,19 @@ export default function AddTestPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium mb-2">Turnaround Time</label>
-                        <select
+                        <label className="block text-sm font-medium mb-2" htmlFor="turnaroundTime">
+                          Turnaround Time (hours)
+                        </label>
+                        <input
+                          id="turnaroundTime"
+                          type="number"
+                          min={1}
                           value={formData.turnaroundTime}
                           onChange={(e) => handleChange("turnaroundTime", e.target.value)}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-[var(--brand-color)] focus:border-[var(--brand-color)]"
-                        >
-                          <option value="">Select time</option>
-                          <option>24 Hours</option>
-                          <option>48 Hours</option>
-                          <option>72 Hours</option>
-                        </select>
+                          placeholder="Enter turnaround time in hours"
+                          className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-teal-500"
+                          required
+                        />
                       </div>
                       <div>
                         <label className="block text-sm font-medium mb-2">Specimen Type</label>

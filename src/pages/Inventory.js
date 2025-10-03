@@ -854,7 +854,7 @@
 //     className="min-h-screen flex flex-col"
 //     style={{
 //       fontFamily: "'Public Sans', sans-serif",
-//       "--brand-color": "#008080",
+//       "--brand-color": "#649ccd",
 //       "--background-color": "#f7f9fc",
 //       "--surface-color": "#fff",
 //       "--text-primary": "#111",
@@ -887,8 +887,11 @@
 
 import React, { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
+import { toast } from 'react-toastify';
 
 const unitOptions = ["units", "pcs", "ml", "mg", "g", "l"];
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 // Loading Spinner Component
 const LoadingSpinner = ({ size = "default" }) => {
@@ -981,7 +984,7 @@ const InventoryModal = ({ visible, onClose, onSubmit, initialData }) => {
   function handleSubmit() {
     if (!isEdit) {
       if (!form.item || !form.purchaseDate || form.amount == null || !form.expiryDate || form.quantity == null || !form.unit) {
-        alert("Please fill all required fields for item.");
+        toast.error("Please fill all required fields for item.");
         return;
       }
       const lowStockThreshold = Math.ceil(Number(form.quantity) * 0.2);
@@ -999,16 +1002,16 @@ const InventoryModal = ({ visible, onClose, onSubmit, initialData }) => {
     }
     if (isEdit) {
       if (!form.item) {
-        alert("Please fill item name.");
+        toast.warn("Please fill item name.");
         return;
       }
       if (!form.batches || form.batches.length === 0) {
-        alert("Please add at least one batch.");
+        toast.warn("Please add at least one batch.");
         return;
       }
       for (const b of form.batches) {
         if (b.quantity == null || !b.unit || !b.purchaseDate || b.amount == null || !b.expiryDate) {
-          alert("Please fill all batch details.");
+          toast.warn("Please fill all required fields for batch.");
           return;
         }
       }
@@ -1254,7 +1257,7 @@ const AddBatchModal = ({ visible, onClose, onSubmit, item }) => {
 
   function submit() {
     if (!batch.quantity || !batch.unit || !batch.purchaseDate || !batch.amount || !batch.expiryDate) {
-      alert("Please fill all batch details");
+      toast.error("Please fill all required fields.");
       return;
     }
     onSubmit(batch);
@@ -1362,11 +1365,11 @@ const StockTable = ({ onEdit, onAddBatch, onRefresh }) => {
   async function fetchItems() {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/inventory");
+      const res = await fetch(`${BACKEND_URL}/inventory`);
       const { inventory } = await res.json();
       setInventory(inventory);
     } catch {
-      alert("Error fetching inventory");
+      toast.error("Error fetching inventory");
     } finally {
       setLoading(false);
     }
@@ -1379,26 +1382,26 @@ const StockTable = ({ onEdit, onAddBatch, onRefresh }) => {
   async function saveBatchUpdate(item, batchIdx) {
     const newQty = Number(editingValue);
     if (isNaN(newQty) || newQty < 0) {
-      alert("Enter valid quantity.");
+      toast.error("Enter valid quantity.");
       return;
     }
     try {
-      const updateRes = await fetch(`http://localhost:5000/inventory/${item.id}/batch/${batchIdx}/quantity`, {
+      const updateRes = await fetch(`${BACKEND_URL}/inventory/${item.id}/batch/${batchIdx}/quantity`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ quantity: newQty }),
       });
       if (updateRes.ok) {
-        alert("Batch quantity updated");
+        toast.success("Batch quantity updated successfully");
         setEditingBatch({ itemId: null, batchIdx: null });
         setEditingValue("");
         setRefresh((r) => r + 1);
         if (onRefresh) onRefresh();
       } else {
-        alert("Failed to update batch");
+        toast.error("Failed to update batch");
       }
     } catch {
-      alert("Error updating batch");
+      toast.error("Error updating batch");
     }
   }
 
@@ -1481,7 +1484,7 @@ const StockTable = ({ onEdit, onAddBatch, onRefresh }) => {
 
       <div className="overflow-x-auto rounded-xl border border-[var(--border-color)] bg-white shadow-sm">
         <table className="w-full text-sm min-w-[800px]">
-          <thead className="bg-gray-100">
+          <thead className="bg-[#c1d7eb] opacity-90">
             <tr>
               <th className="px-3 sm:px-6 py-3 text-left font-medium text-gray-600 tracking-wider">Item</th>
               <th className="px-3 sm:px-6 py-3 text-left font-medium text-gray-600 tracking-wider">Quantity</th>
@@ -1555,16 +1558,16 @@ const StockTable = ({ onEdit, onAddBatch, onRefresh }) => {
                           onClick={() => {
                             if (window.confirm(`Delete ${item.item}?`)) {
                               onEdit(null);
-                              fetch(`http://localhost:5000/inventory/${item.id}`, { method: "DELETE" })
+                              fetch(`${BACKEND_URL}/inventory/${item.id}`, { method: "DELETE" })
                                 .then((res) => {
                                   if (res.ok) {
-                                    alert("Deleted successfully");
+                                    toast.success("Deleted successfully");
                                     setRefresh((r) => r + 1);
                                   } else {
-                                    alert("Delete failed");
+                                    toast.error("Delete failed");
                                   }
                                 })
-                                .catch(() => alert("Delete failed"));
+                                .catch(() => toast.error("Delete failed"));
                             }
                           }}
                         >
@@ -1669,7 +1672,7 @@ const LowStockAlerts = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:5000/inventory/low-stock")
+    fetch(`${BACKEND_URL}/inventory/low-stock`)
       .then((res) => res.json())
       .then(({ lowStockItems }) => setItems(lowStockItems))
       .catch(() => { })
@@ -1725,7 +1728,7 @@ const ExpiryNotifications = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:5000/inventory/expired")
+    fetch(`${BACKEND_URL}/inventory/expired`)
       .then((res) => res.json())
       .then(({ expiredItems }) => setItems(expiredItems))
       .catch(() => { })
@@ -1832,7 +1835,7 @@ const MainContent = () => {
     }
     try {
       const res = await fetch(
-        item.id ? `http://localhost:5000/inventory/${item.id}` : "http://localhost:5000/inventory",
+        item.id ? `${BACKEND_URL}/inventory/${item.id}` : `${BACKEND_URL}/inventory`,
         {
           method: item.id ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
@@ -1840,15 +1843,15 @@ const MainContent = () => {
         }
       );
       if (res.ok) {
-        alert("Inventory saved.");
+        toast.success("Item saved successfully");
         setModalOpen(false);
         setRefresh(r => r + 1);
         setRefreshKey(k => k + 1);
       } else {
-        alert("Save failed");
+        toast.error("Save failed");
       }
     } catch {
-      alert("Save failed");
+      toast.error("Save failed");
     } finally {
       setSaving(false);
     }
@@ -1858,7 +1861,7 @@ const MainContent = () => {
     if (!addBatchItem) return;
     setSaving(true);
     try {
-      const res = await fetch(`http://localhost:5000/inventory/${addBatchItem.id}`);
+      const res = await fetch(`${BACKEND_URL}/inventory/${addBatchItem.id}`);
       if (!res.ok) throw new Error("Failed to fetch item");
       const currentItem = await res.json();
       const batches = currentItem.batches || [];
@@ -1869,19 +1872,19 @@ const MainContent = () => {
       });
       const totalQty = batches.reduce((sum, b) => sum + Number(b.quantity), 0);
       const status = totalQty <= (batches[0]?.lowStockThreshold || Math.ceil(totalQty * 0.2)) ? "Low Stock" : "In Stock";
-      const updateRes = await fetch(`http://localhost:5000/inventory/${addBatchItem.id}`, {
+      const updateRes = await fetch(`${BACKEND_URL}/inventory/${addBatchItem.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...currentItem, batches, status }),
       });
       if (!updateRes.ok) throw new Error("Failed to update item");
-      alert("Batch added successfully");
+      toast.success("Batch added successfully");
       setBatchModalOpen(false);
       setAddBatchItem(null);
       setRefresh(r => r + 1);
       setRefreshKey(k => k + 1);
     } catch (e) {
-      alert(e.message);
+      toast.error("Failed to add batch");
     } finally {
       setSaving(false);
     }
@@ -1952,8 +1955,8 @@ const PathologyStockControl = () => {
       className="relative flex flex-col h-screen bg-[var(--background-color)]"
       style={{
         fontFamily: "'Public Sans', sans-serif",
-        "--brand-color": "#008080",
-        "--background-color": "#f7f9fc",
+        "--brand-color": "#649ccd",
+        "--background-color": "#f8f9fa",
         "--surface-color": "#fff",
         "--text-primary": "#111",
         "--text-secondary": "#637988",
@@ -2005,7 +2008,7 @@ const PathologyStockControl = () => {
         )}
 
         {/* Main Content */}
-        <main className="flex-grow bg-[#f0f4f7] overflow-auto p-6">
+        <main className="flex-grow bg-[#f0f5fa] overflow-auto p-6">
           <header className="flex items-center justify-between mb-8">
               <button
                 className="md:hidden p-2 -ml-2 text-[var(--text-primary)]"
@@ -2060,7 +2063,7 @@ const PathologyStockControl = () => {
               </div>
             </header>
           {/* Content Area */}
-          <div className="flex-1 bg-[var(--background-color)] p-4 sm:p-6 lg:p-8 overflow-auto">
+          <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
             <MainContent />
           </div>
         </main>

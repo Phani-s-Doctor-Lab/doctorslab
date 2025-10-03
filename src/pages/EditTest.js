@@ -124,7 +124,7 @@
 //     <div
 //       className="flex min-h-screen flex-col bg-gray-100 text-[var(--text-primary)]"
 //       style={{
-//         "--brand-color": "#008080",
+//         "--brand-color": "#649ccd",
 //         "--background-color": "#f7f9fc",
 //         "--surface-color": "#ffffff",
 //         "--text-primary": "#111518",
@@ -353,6 +353,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import YesNoSwitch from "../components/YesNoSwitch";
+import { toast } from 'react-toastify';
 
 // Loading Spinner Component
 const LoadingSpinner = ({ size = "default" }) => {
@@ -398,7 +399,7 @@ export default function EditTestPage() {
     cptCode: "",
     loincCode: "",
     instructions: "",
-    status: "",
+    // status: "",
   });
 
   const [parameters, setParameters] = useState([
@@ -408,12 +409,14 @@ export default function EditTestPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
   // Fetch test details
   useEffect(() => {
     const fetchTest = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`http://localhost:5000/tests/${id}`);
+        const res = await fetch(`${BACKEND_URL}/tests/${id}`);
         const data = await res.json();
         if (res.ok) {
           setFormData({
@@ -427,15 +430,15 @@ export default function EditTestPage() {
             cptCode: data.cptCode,
             loincCode: data.loincCode,
             instructions: data.instructions || "",
-            status: data.status,
+            // status: data.status,
           });
           setParameters(data.parameters || []);
         } else {
-          alert("Failed to load test details");
+          toast.error("Failed to load test details");
         }
       } catch (error) {
         console.error("Error loading test:", error);
-        alert("Error loading test details");
+        toast.error("Failed to load test details");
       } finally {
         setLoading(false);
       }
@@ -495,7 +498,7 @@ export default function EditTestPage() {
     };
 
     try {
-      const response = await fetch(`http://localhost:5000/tests/${id}`, {
+      const response = await fetch(`${BACKEND_URL}/tests/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -503,14 +506,14 @@ export default function EditTestPage() {
 
       const data = await response.json();
       if (response.ok) {
-        alert("Test updated successfully!");
+        toast.success("Test updated successfully!");
         navigate("/tests");
       } else {
-        alert("Error: " + data.error);
+        toast.error("Error: " + data.error);
       }
     } catch (error) {
       console.error("Error updating test:", error);
-      alert("Something went wrong while updating the test.");
+      toast.error("Something went wrong while updating the test.");
     } finally {
       setSaving(false);
     }
@@ -528,7 +531,7 @@ export default function EditTestPage() {
     <div
       className="relative flex flex-col h-screen bg-[var(--background-color)]"
       style={{
-        "--brand-color": "#008080",
+        "--brand-color": "#649ccd",
         "--background-color": "#f7f9fc",
         "--surface-color": "#ffffff",
         "--text-primary": "#111518",
@@ -584,7 +587,7 @@ export default function EditTestPage() {
         )}
 
         {/* Main Content */}
-        <main className="flex-grow bg-[#f0f4f7] overflow-auto p-6">
+        <main className="flex-grow bg-[#f0f5fa] overflow-auto p-6">
           
           <header className="flex items-center justify-between mb-8">
               <button
@@ -681,7 +684,7 @@ export default function EditTestPage() {
                       </div>
 
                       {/* Status */}
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      {/* <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <label className="block text-sm font-medium">Status</label>
                         <YesNoSwitch
                           checked={formData.status === "active"}
@@ -689,7 +692,7 @@ export default function EditTestPage() {
                             handleChange("status", newChecked ? "active" : "inactive")
                           }
                         />
-                      </div>
+                      </div> */}
 
                       {/* Category & Price */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

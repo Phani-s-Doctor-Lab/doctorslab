@@ -64,6 +64,8 @@ const PatientTestManager = () => {
   const userName =
     localStorage.getItem("userName") || sessionStorage.getItem("userName") || "";
 
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
   // Fetch patient info by ID
   const handlePatientSelect = async (patient) => {
     setPatient(patient);
@@ -73,7 +75,7 @@ const PatientTestManager = () => {
     setLoading(true);
     try {
       const resp = await fetch(
-        `http://localhost:5000/patients/${patient.patientId || patient.id}`
+        `${BACKEND_URL}/patients/${patient.patientId || patient.id}`
       );
       const data = await resp.json();
       if (resp.ok && data.patient) {
@@ -216,7 +218,7 @@ const PatientTestManager = () => {
         tests: [], // no new tests here, just payment
       };
       const resp = await fetch(
-        `http://localhost:5000/patients/${patient.patientId}/add-tests`,
+        `${BACKEND_URL}/patients/${patient.patientId}/add-tests`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -249,7 +251,7 @@ const PatientTestManager = () => {
     setShowAddTests(true);
     setLoading(true);
     try {
-      const resp = await fetch("http://localhost:5000/tests");
+      const resp = await fetch(`${BACKEND_URL}/tests`);
       const data = await resp.json();
       if (resp.ok) {
         const requestedIds = (patient?.tests || []).map(
@@ -272,7 +274,7 @@ const PatientTestManager = () => {
       const fetchPackages = async () => {
         setLoading(true);
         try {
-          const res = await fetch("http://localhost:5000/packages");
+          const res = await fetch(`${BACKEND_URL}/packages`);
           const data = await res.json();
           if (res.ok) {
             setPackages(data.packages || []);
@@ -311,7 +313,7 @@ const PatientTestManager = () => {
         time: getCurrentTime(),
       };
       const resp = await fetch(
-        `http://localhost:5000/patients/${patient.patientId}/add-tests`,
+        `${BACKEND_URL}/patients/${patient.patientId}/add-tests`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -337,7 +339,7 @@ const PatientTestManager = () => {
   useEffect(() => {
     async function fetchAllPatients() {
       try {
-        const resp = await fetch("http://localhost:5000/patients");
+        const resp = await fetch(`${BACKEND_URL}/patients`);
         const data = await resp.json();
         setAllPatients(data.patients || []);
       } catch (err) {
@@ -366,7 +368,7 @@ const PatientTestManager = () => {
       try {
         if (location.state?.newlyAddedTest) {
           const newTestId = location.state.newlyAddedTest;
-          const res = await fetch(`http://localhost:5000/tests/${newTestId}`);
+          const res = await fetch(`${BACKEND_URL}/tests/${newTestId}`);
           const testData = await res.json();
 
           setAvailableTests((prev) => {
@@ -394,7 +396,7 @@ const PatientTestManager = () => {
           setPatientId(location.state.patientId);
 
           const resp = await fetch(
-            `http://localhost:5000/patients/${location.state.patientId}`
+            `${BACKEND_URL}/patients/${location.state.patientId}`
           );
           const data = await resp.json();
           if (data.patient) {
@@ -442,7 +444,7 @@ const PatientTestManager = () => {
 
     try {
       const resp = await fetch(
-        `http://localhost:5000/patients/${patient.patientId}/invoice-number`,
+        `${BACKEND_URL}/patients/${patient.patientId}/invoice-number`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -620,8 +622,8 @@ const PatientTestManager = () => {
     <div
       className="flex h-screen flex-col bg-gray-100 text-[var(--text-primary)]"
       style={{
-        "--brand-color": "#008080",
-        "--background-color": "#f7f9fc",
+        "--brand-color": "#649ccd",
+        "--background-color": "#d1e1f0",
         "--surface-color": "#ffffff",
         "--text-primary": "#111518",
         "--text-secondary": "#637988",
@@ -672,7 +674,7 @@ const PatientTestManager = () => {
           />
         )}
 
-        <main className="flex-grow bg-[#f0f4f7] overflow-auto p-6">
+        <main className="flex-grow bg-[#f0f5fa] overflow-auto p-6">
 
         <header className="flex items-center justify-between mb-8">
               <button

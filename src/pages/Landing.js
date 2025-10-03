@@ -6,7 +6,7 @@ const PathologyServices = () => {
     const navigate = useNavigate();
     return (
         <div className="flex flex-col min-h-screen bg-[var(--background-color)] text-[var(--text-primary)]" style={{
-            "--primary-color": "#008080",
+            "--primary-color": "#649ccd",
             "--secondary-color": "#D3D3D3",
             "--text-primary": "#111518",
             "--text-secondary": "#637988",

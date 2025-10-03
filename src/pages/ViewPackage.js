@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
+import { toast } from 'react-toastify';
 
 export default function ViewPackagePage() {
   const { id } = useParams();
@@ -16,15 +17,17 @@ export default function ViewPackagePage() {
     sessionStorage.getItem("userName") ||
     "";
 
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
   useEffect(() => {
     async function fetchPackage() {
       try {
-        const resp = await fetch(`http://localhost:5000/packages/${id}`);
+        const resp = await fetch(`${BACKEND_URL}/packages/${id}`);
         const data = await resp.json();
         if (resp.ok) {
           setPackageData(data);
         } else {
-          alert("Failed to load package details");
+          toast.error(data.error || "Failed to fetch package.");
         }
       } catch (error) {
         console.error("Error fetching package:", error);
@@ -48,7 +51,7 @@ export default function ViewPackagePage() {
       className="flex flex-col h-screen bg-gray-100 text-gray-900"
       style={{
         fontFamily: "'Public Sans', sans-serif",
-        "--brand-color": "#008080",
+        "--brand-color": "#649ccd",
         "--background-color": "#f7f9fc",
         "--surface-color": "#fff",
         "--text-primary": "#111",
@@ -74,7 +77,7 @@ export default function ViewPackagePage() {
           />
         )}
 
-        <main className="flex-grow bg-[#f0f4f7] overflow-auto p-6">
+        <main className="flex-grow bg-[#f0f5fa] overflow-auto p-6">
           {/* Header */}
           <header className="flex items-center justify-between mb-8">
             <button

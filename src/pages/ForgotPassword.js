@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from 'react-toastify';
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -13,6 +14,8 @@ export default function ForgotPassword() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
   useEffect(() => {
     let called = false;
 
@@ -23,7 +26,7 @@ export default function ForgotPassword() {
       try {
         setMessage("");
         setError("");
-        const response = await fetch("http://localhost:5000/send-reset-otp-admin", { method: "POST" });
+        const response = await fetch(`${BACKEND_URL}/send-reset-otp-admin`, { method: "POST" });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "Failed to send OTP");
         setMessage("OTP sent to admin's email.");
@@ -46,7 +49,7 @@ export default function ForgotPassword() {
     }
 
     try {
-      const res = await fetch("http://localhost:5000/api/reset-password", {
+      const res = await fetch(`${BACKEND_URL}/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ otp, newPassword }),

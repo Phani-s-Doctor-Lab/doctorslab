@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
+import { toast } from 'react-toastify';
 
 const getCurrentDate = () => {
   const date = new Date();
@@ -87,15 +88,11 @@ const PatientForm = () => {
   const userName =
     localStorage.getItem("userName") || sessionStorage.getItem("userName") || "";
 
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
   // Mock API calls with loading states
     useEffect(() => {
-    fetch("http://localhost:5000/doctors")
-      .then(res => res.json())
-      .then(data => setDoctorOptions(data.doctors || []));
-  }, []);
-
-  useEffect(() => {
-    fetch("http://localhost:5000/doctors")
+    fetch(`${BACKEND_URL}/doctors`)
       .then(res => res.json())
       .then(data => setDoctorOptions(data.doctors || []));
   }, []);
@@ -104,12 +101,12 @@ const PatientForm = () => {
   useEffect(() => {
     const fetchTests = async () => {
       try {
-        const res = await fetch("http://localhost:5000/tests");
+        const res = await fetch(`${BACKEND_URL}/tests`);
         const data = await res.json();
         if (res.ok) {
           setTests(data.tests || []);
         } else {
-          alert("Failed to load tests");
+          toast.error("Failed to load tests");
         }
       } catch (error) {
         console.error("Error fetching tests:", error);
@@ -121,12 +118,12 @@ const PatientForm = () => {
   useEffect(() => {
     const fetchPackages = async () => {
       try {
-        const res = await fetch("http://localhost:5000/packages");
+        const res = await fetch(`${BACKEND_URL}/packages`);
         const data = await res.json();
         if (res.ok) {
           setPackages(data.packages || []);
         } else {
-          alert("Failed to load packages");
+          toast.error("Failed to load packages");
         }
       } catch (error) {
         console.error("Error fetching packages:", error);
@@ -152,7 +149,7 @@ const PatientForm = () => {
         );
       } else {
         // If not already in tests, fetch it
-        fetch(`http://localhost:5000/tests/${newTestId}`)
+        fetch(`${BACKEND_URL}/tests/${newTestId}`)
           .then((res) => res.json())
           .then((data) => {
             if (data) {
@@ -202,7 +199,7 @@ const PatientForm = () => {
       setSelectedDoctor(doctorSearchInput); // Picked existing
     } else if (doctorSearchInput.trim() !== "") {
       // Add new doctor to DB
-      const resp = await fetch("http://localhost:5000/doctors", {
+      const resp = await fetch(`${BACKEND_URL}/doctors`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: doctorSearchInput }),
@@ -277,7 +274,7 @@ const PatientForm = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (selectedTests.length === 0) {
-      alert("Please select at least one test");
+      toast.warn("Please select at least one test");
       return;
     }
     setShowDiscountModal(true);
@@ -297,21 +294,21 @@ const PatientForm = () => {
       }
     };
     try {
-      const res = await fetch("http://localhost:5000/patients", {
+      const res = await fetch(`${BACKEND_URL}/patients`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
       const data = await res.json();
       if (res.ok) {
-        alert("Patient added successfully!");
+        toast.success("Patient saved successfully!");
         navigate("/patients");
       } else {
-        alert("Error: " + data.error);
+        toast.error("Error: " + data.error);
       }
     } catch (error) {
       console.error("Error saving patient:", error);
-      alert("Something went wrong while saving patient.");
+      toast.error("Something went wrong while saving the patient.");
     }
   };
 
@@ -324,7 +321,7 @@ const PatientForm = () => {
     <div
       className="flex min-h-screen flex-col bg-gray-100 text-[var(--text-primary)]"
       style={{
-        "--brand-color": "#008080",
+        "--brand-color": "#649ccd",
         "--background-color": "#f7f9fc",
         "--surface-color": "#ffffff",
         "--text-primary": "#111518",
@@ -388,7 +385,7 @@ const PatientForm = () => {
           <Sidebar />
         </div>
 
-        <main className="flex-grow bg-[#f0f4f7] overflow-auto p-6">
+        <main className="flex-grow bg-[#f0f5fa] overflow-auto p-6">
           <header className="flex items-center justify-between mb-8">
               <button
                 className="md:hidden p-2 -ml-2 text-[var(--text-primary)]"

@@ -203,7 +203,7 @@
 //           {/* Sidebar */}
 //           <Sidebar />
 //           {/* Main Content */}
-//           <main className="flex-1 bg-[#f0f4f7] px-4 py-8 sm:px-6 lg:px-8">
+//           <main className="flex-1 bg-[#f0f5fa] px-4 py-8 sm:px-6 lg:px-8">
 //             <div className="mx-auto max-w-7xl space-y-8">
 //               {/* Lab Test Frequency Section */}
 //               <section>
@@ -239,13 +239,13 @@
 //                 {/* Tests Frequency Cards */}
 //                 <div className="rounded-lg border border-[#e2e8f0] bg-white p-6 shadow-sm">
 //                   <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4">
-//                     <div className="flex flex-col rounded-lg bg-[#f0f4f7] p-4">
+//                     <div className="flex flex-col rounded-lg bg-[#f0f5fa] p-4">
 //                       <p className="text-sm font-medium text-[#64748b]">Total Tests (All Time)</p>
 //                       <p className="mt-1 text-3xl font-bold text-[#1e293b]">
 //                         {grandTotalTests}
 //                       </p>
 //                     </div>
-//                     <div className="flex flex-col rounded-lg bg-[#f0f4f7] p-4">
+//                     <div className="flex flex-col rounded-lg bg-[#f0f5fa] p-4">
 //                       <p className="text-sm font-medium text-[#64748b]">Total Tests</p>
 //                       <p className="mt-1 text-3xl font-bold text-[#1e293b]">
 //                         {totalCurrentCount.toLocaleString()}
@@ -267,7 +267,7 @@
 //                             className="grid grid-cols-[100px_1fr_50px] items-center gap-4"
 //                           >
 //                             <p className="truncate text-sm font-medium text-[#64748b]">{test.name}</p>
-//                             <div className="h-2.5 w-full rounded-full bg-[#f0f4f7]">
+//                             <div className="h-2.5 w-full rounded-full bg-[#f0f5fa]">
 //                               <div
 //                                 className="h-2.5 rounded-full bg-[#b2d1e5]"
 //                                 style={{ width: `${test.percent}%` }}
@@ -505,6 +505,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "rec
 import { Skeleton } from "@mui/material";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import { toast } from 'react-toastify';
 
 const TIME_RANGES = ["Day", "Week", "Month", "Year"];
 const TOP_TESTS_OPTIONS = ["Top 5", "View All"];
@@ -551,6 +552,8 @@ function ReportsDashboard() {
   const userName =
     localStorage.getItem("userName") || sessionStorage.getItem("userName") || "";
 
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
   function mapTimeRangeToParam(range) {
     switch (range) {
       case "Day": return "1d";
@@ -594,25 +597,25 @@ function ReportsDashboard() {
         const testRangeParam = mapTimeRangeToParam(testTimeRange);
         const topParam = testTopFilter === "Top 5" ? 5 : 1000;
         const testsResp = await fetch(
-          `http://localhost:5000/testsFrequency?range=${testRangeParam}&top=${topParam}&startDate=${startDate}&endDate=${endDate}`
+          `${BACKEND_URL}/testsFrequency?range=${testRangeParam}&top=${topParam}&startDate=${startDate}&endDate=${endDate}`
         );
         const testsData = await testsResp.json();
         setFrequentTests(testsData.tests || []);
         setChange(testsData.change || 0);
 
-        const grandTestsResp = await fetch("http://localhost:5000/testsTotal");
+        const grandTestsResp = await fetch(`${BACKEND_URL}/testsTotal`);
         const grandTestsData = await grandTestsResp.json();
         setGrandTotalTests(grandTestsData.total || 0);
 
         const paymentParam = paymentType;
 
         const incomeResp = await fetch(
-          `http://localhost:5000/revenue?range=${testRangeParam}&paymentType=${paymentParam}&startDate=${startDate}&endDate=${endDate}`
+          `${BACKEND_URL}/revenue?range=${testRangeParam}&paymentType=${paymentParam}&startDate=${startDate}&endDate=${endDate}`
         );
         const incomeData = await incomeResp.json();
 
         const expenseResp = await fetch(
-          `http://localhost:5000/expenses?range=${testRangeParam}&startDate=${startDate}&endDate=${endDate}`
+          `${BACKEND_URL}/expenses?range=${testRangeParam}&startDate=${startDate}&endDate=${endDate}`
         );
         const expenseData = await expenseResp.json();
 
@@ -626,11 +629,11 @@ function ReportsDashboard() {
         const netChange = previousNet ? ((currentNet - previousNet) / Math.abs(previousNet)) * 100 : 0;
         setNetCashFlow({ amount: currentNet, change: netChange });
 
-        const expensesResp = await fetch(`http://localhost:5000/expensesList?range=${testRangeParam}&startDate=${startDate}&endDate=${endDate}`);
+        const expensesResp = await fetch(`${BACKEND_URL}/expensesList?range=${testRangeParam}&startDate=${startDate}&endDate=${endDate}`);
         const expensesData = await expensesResp.json();
         setExpenses(expensesData.expenses || []);
 
-        const otherExpensesResp = await fetch(`http://localhost:5000/getExpenses?range=${testRangeParam}&startDate=${startDate}&endDate=${endDate}`);
+        const otherExpensesResp = await fetch(`${BACKEND_URL}/getExpenses?range=${testRangeParam}&startDate=${startDate}&endDate=${endDate}`);
         const otherExpensesData = await otherExpensesResp.json();
         setOtherExpenses(otherExpensesData.expenses || []);
       } catch (error) {
@@ -646,7 +649,7 @@ function ReportsDashboard() {
     async function fetchTrend() {
       try {
         setLoadingTrend(true);
-        const res = await fetch("http://localhost:5000/income/trend");
+        const res = await fetch(`${BACKEND_URL}/income/trend`);
         const data = await res.json();
         setIncomeTrendData(data);
       } catch (err) {
@@ -661,7 +664,7 @@ function ReportsDashboard() {
   const handleExpenseSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:5000/addExpense", {
+      const res = await fetch(`${BACKEND_URL}/addExpense`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(expenseForm),
@@ -673,7 +676,7 @@ function ReportsDashboard() {
       setShowExpenseModal(false);
     } catch (err) {
       console.error("Error adding expense:", err);
-      alert("Something went wrong while adding the expense");
+      toast.error("Something went wrong while adding the expense");
     }
   };
   const totalCurrentCount = frequentTests.reduce((sum, t) => sum + (t.count || 0), 0);
@@ -687,11 +690,11 @@ function ReportsDashboard() {
     <div
       className="relative flex flex-col h-screen bg-[var(--background-color)]"
       style={{
-        "--primary-color": "#008080",
+        "--primary-color": "#649ccd",
         "--primary-light": "#e0f2f1",
         "--text-primary": "#111827",
         "--text-secondary": "#6b7280",
-        "--background-color": "#f8f9fa",
+        "--background-color": "#d1e1f0",
         "--border-color": "#D3D3D3",
         fontFamily: "'Public Sans', sans-serif",
       }}
@@ -718,7 +721,7 @@ function ReportsDashboard() {
           )}
 
           {/* Main Content */}
-          <main className="flex-grow bg-[#f0f4f7] overflow-auto p-6">
+          <main className="flex-grow bg-[#f0f5fa] overflow-auto p-6">
             <header className="flex items-center justify-between mb-8">
               <button
                 className="md:hidden p-2 -ml-2 text-[var(--text-primary)]"
@@ -849,13 +852,13 @@ function ReportsDashboard() {
                     {/* Tests Frequency Cards */}
                     <div className="rounded-lg border border-[#e2e8f0] bg-white p-6 shadow-sm">
                       <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4">
-                        <div className="flex flex-col rounded-lg bg-[#f0f4f7] p-4">
+                        <div className="flex flex-col rounded-lg bg-[#f0f5fa] p-4">
                           <p className="text-sm font-medium text-[#64748b]">Total Tests (All Time)</p>
                           <p className="mt-1 text-3xl font-bold text-[#1e293b]">
                             {grandTotalTests}
                           </p>
                         </div>
-                        <div className="flex flex-col rounded-lg bg-[#f0f4f7] p-4">
+                        <div className="flex flex-col rounded-lg bg-[#f0f5fa] p-4">
                           <p className="text-sm font-medium text-[#64748b]">Total Tests</p>
                           <p className="mt-1 text-3xl font-bold text-[#1e293b]">
                             {totalCurrentCount.toLocaleString()}
@@ -877,7 +880,7 @@ function ReportsDashboard() {
                                 className="grid grid-cols-[100px_1fr_50px] items-center gap-4"
                               >
                                 <p className="truncate text-sm font-medium text-[#64748b]">{test.name}</p>
-                                <div className="h-2.5 w-full rounded-full bg-[#f0f4f7]">
+                                <div className="h-2.5 w-full rounded-full bg-[#f0f5fa]">
                                   <div
                                     className="h-2.5 rounded-full bg-[#b2d1e5]"
                                     style={{ width: `${test.percent}%` }}

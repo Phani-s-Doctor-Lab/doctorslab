@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from 'react-toastify';
 
 const PathologyLogin = () => {
   const [login, setLogin] = useState("");
@@ -11,6 +12,8 @@ const PathologyLogin = () => {
 
   const navigate = useNavigate();
 
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
   const toggleShowPassword = () => {
     setShowPassword((prev) => !prev);
   };
@@ -21,7 +24,7 @@ const PathologyLogin = () => {
     setMessage("");
 
     try {
-      const res = await fetch("http://localhost:5000/login", {
+      const res = await fetch(`${BACKEND_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ login, password }),
@@ -55,7 +58,7 @@ const PathologyLogin = () => {
     <div
       className="relative flex min-h-screen flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-[var(--background-color)] text-[var(--text-primary)]"
       style={{
-        "--brand-color": "#008080",
+        "--brand-color": "#649ccd",
         "--background-color": "#f0f2f5",
         "--card-background-color": "#ffffff",
         "--text-primary": "#1a202c",

@@ -4,7 +4,7 @@
 // // Set your color variables globally!
 // const pageStyle = {
 //   fontFamily: '"Public Sans", sans-serif',
-//   "--primary-color": "#008080",
+//   "--primary-color": "#649ccd",
 //   "--primary-light-color": "#f7f9fc",
 //   "--secondary-color": "#fff",
 //   "--text-primary-color": "#111",
@@ -423,12 +423,15 @@
 
 import React, { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
+import { toast } from 'react-toastify';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 // Global page style
 const pageStyle = {
   fontFamily: '"Public Sans", sans-serif',
-  "--primary-color": "#008080",
-  "--primary-light-color": "#f7f9fc",
+  "--primary-color": "#649ccd",
+  "--primary-light-color": "#c1d7eb",
   "--secondary-color": "#fff",
   "--text-primary-color": "#111",
   "--text-secondary-color": "#637988",
@@ -463,7 +466,7 @@ function StaffModal({ open, staff, onClose, onSave, mode }) {
   function handleSubmit(e) {
     e.preventDefault();
     if (!form.name || !form.department || !form.role || !form.contact) {
-      alert("Fill required fields");
+      toast.error("Please fill all required fields.");
       return;
     }
     onSave(form);
@@ -674,7 +677,7 @@ function AttendanceModal({ open, staff, onClose }) {
 
   useEffect(() => {
     if (open && staff) {
-      fetch(`http://localhost:5000/attendance/${staff.id}`)
+      fetch(`${BACKEND_URL}/attendance/${staff.id}`)
         .then((res) => res.json())
         .then((data) => setAttendance(data.attendance || []))
         .catch(() => setAttendance([]));
@@ -682,7 +685,7 @@ function AttendanceModal({ open, staff, onClose }) {
   }, [open, staff]);
 
   function markAttendance() {
-    fetch("http://localhost:5000/attendance", {
+    fetch(`${BACKEND_URL}/attendance`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -693,13 +696,13 @@ function AttendanceModal({ open, staff, onClose }) {
     })
       .then((res) => res.json())
       .then(() => {
-        alert("Attendance marked!");
+        toast.success("Attendance marked!");
         setAttendance((att) => [
           ...att,
           { staffId: staff.id, date: todayStr, status: newStatus },
         ]);
       })
-      .catch(() => alert("Failed to mark attendance"));
+      .catch(() => toast.error("Failed to mark attendance"));
   }
 
   if (!open || !staff) return null;
@@ -765,7 +768,7 @@ export default function StaffManagementPage() {
     localStorage.getItem("userName") || sessionStorage.getItem("userName") || "";
 
   useEffect(() => {
-    fetch("http://localhost:5000/staff")
+    fetch(`${BACKEND_URL}/staff`)
       .then((res) => res.json())
       .then((data) => {
         setStaff(data.staff || []);
@@ -779,7 +782,7 @@ export default function StaffManagementPage() {
 
   function handleSaveStaff(form) {
     if (modalMode === "edit" && modalStaff) {
-      fetch(`http://localhost:5000/staff/${modalStaff.id}`, {
+      fetch(`${BACKEND_URL}/staff/${modalStaff.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -794,7 +797,7 @@ export default function StaffManagementPage() {
           setModalOpen(false);
         });
     } else {
-      fetch("http://localhost:5000/staff", {
+      fetch(`${BACKEND_URL}/staff`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -809,7 +812,7 @@ export default function StaffManagementPage() {
 
   function handleDeleteStaff(id) {
     if (!window.confirm("Delete staff member?")) return;
-    fetch(`http://localhost:5000/staff/${id}`, { method: "DELETE" })
+    fetch(`${BACKEND_URL}/staff/${id}`, { method: "DELETE" })
       .then((res) => res.json())
       .then(() => setStaff((staff) => staff.filter((s) => s.id !== id)));
   }
@@ -890,7 +893,7 @@ export default function StaffManagementPage() {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 bg-[#f0f4f7] px-4 sm:px-10 py-6 sm:py-8 overflow-x-auto">
+        <main className="flex-1 bg-[#f0f5fa] px-4 sm:px-10 py-6 sm:py-8 overflow-x-auto">
           <header className="flex items-center justify-between mb-8">
               <button
                 className="md:hidden p-2 -ml-2 text-[var(--text-primary)]"

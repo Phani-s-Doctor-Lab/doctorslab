@@ -378,7 +378,7 @@
 //   return (
 //     <div className="flex min-h-screen bg-gray-50"
 //     style={{
-//         "--brand-color": "#008080",
+//         "--brand-color": "#649ccd",
 //         "--background-color": "#f7f9fc",
 //         "--surface-color": "#ffffff",
 //         "--text-primary": "#111518",
@@ -640,8 +640,11 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { toast } from 'react-toastify';
 
 const LETTERHEAD_URL = "/images/DOCTORS LAB LETTER HEAD - Copy.png"; // Update as appropriate
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 function ReagentUsageForm({ inventory, usageList, setUsageList }) {
   const [filters, setFilters] = useState(usageList.map(() => ""));
@@ -821,7 +824,7 @@ export default function EnterTestResult() {
 
         // Fetch patient data
         const pRes = await fetch(
-          `http://localhost:5000/patients/${patientId}`,
+          `${BACKEND_URL}/patients/${patientId}`,
           { cache: "no-store" }
         );
         if (!pRes.ok) throw new Error(`Patient fetch failed: ${pRes.status}`);
@@ -829,8 +832,8 @@ export default function EnterTestResult() {
 
         // Fetch test or package data depending on isPackage
         const testUrl = isPackage
-          ? `http://localhost:5000/packages/${testId}`
-          : `http://localhost:5000/tests/${testId}`;
+          ? `${BACKEND_URL}/packages/${testId}`
+          : `${BACKEND_URL}/tests/${testId}`;
 
         const tRes = await fetch(testUrl, { cache: "no-store" });
         if (!tRes.ok)
@@ -839,7 +842,7 @@ export default function EnterTestResult() {
 
         // Fetch individual test results
         const rRes = await fetch(
-          `http://localhost:5000/patients/${patientId}/tests/${testId}/${selectedDate}/results`,
+          `${BACKEND_URL}/patients/${patientId}/tests/${testId}/${selectedDate}/results`,
           { cache: "no-store" }
         );
         if (!rRes.ok)
@@ -850,7 +853,7 @@ export default function EnterTestResult() {
         let prData = null;
         if (isPackage) {
           const pRes2 = await fetch(
-            `http://localhost:5000/patients/${patientId}/packages/${testId}/${selectedDate}/results`,
+            `${BACKEND_URL}/patients/${patientId}/packages/${testId}/${selectedDate}/results`,
             { cache: "no-store" }
           );
           if (!pRes2.ok)
@@ -875,7 +878,7 @@ export default function EnterTestResult() {
         setPackageTestsResults(prData?.testsResults || []);
       } catch (error) {
         console.error("Fetch error:", error);
-        alert(`Failed to fetch data: ${error.message || error}`);
+        toast.error(error.message);
       } finally {
         setLoading(false);
       }
@@ -889,7 +892,7 @@ export default function EnterTestResult() {
   useEffect(() => {
     async function fetchInventory() {
       try {
-        const res = await fetch("http://localhost:5000/inventory");
+        const res = await fetch(`${BACKEND_URL}/inventory`);
         const data = await res.json();
         setInventory(data.inventory || []);
       } catch {}
@@ -900,7 +903,7 @@ export default function EnterTestResult() {
   useEffect(() => {
     async function fetchSignatures() {
       try {
-        const res = await fetch("http://localhost:5000/signatures");
+        const res = await fetch(`${BACKEND_URL}/signatures`);
         const data = await res.json();
         setSignatures(data.signatures || []);
         if (data.signatures.length) {
@@ -945,7 +948,7 @@ export default function EnterTestResult() {
   // PDF Generation - uses jsPDF + autotable
   const generatePDFWithAutoTable = (signatureName, preview = false) => {
     if (!patient || !test) {
-      alert("Patient or Test data not loaded");
+      toast.error("Patient or Test data not loaded");
       return;
     }
 
@@ -1248,7 +1251,7 @@ export default function EnterTestResult() {
   async function saveUsedReagents() {
     const filteredUsage = usageList.filter((u) => u.itemId && u.quantity);
     if (filteredUsage.length === 0) {
-      alert("Please enter usage for at least one reagent.");
+      toast.error("Please enter at least one usage.");
       return;
     }
     // Validate quantities do not exceed available stock
@@ -1258,29 +1261,29 @@ export default function EnterTestResult() {
         ? invItem.batches.reduce((a, b) => a + Number(b.quantity || 0), 0)
         : 0;
       if (Number(usage.quantity) > available) {
-        alert(`Usage for ${invItem.item} exceeds available stock.`);
+        toast.error(`Usage for ${invItem.item} exceeds available stock.`);
         return;
       }
     }
     // Proceed to API call (similar to your saveInventory function)
     try {
-      const res = await fetch(`http://localhost:5000/inventory/deduct-usage`, {
+      const res = await fetch(`${BACKEND_URL}/inventory/deduct-usage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ usage: filteredUsage, testId, patientId }),
       });
       if (res.ok) {
-        alert("Inventory updated successfully.");
+        toast.success("Inventory updated successfully.");
         setUsageList([{ itemId: "", quantity: "" }]);
         // refetch inventory to update UI
-        const invRes = await fetch("http://localhost:5000/inventory");
+        const invRes = await fetch(`${BACKEND_URL}/inventory`);
         const invData = await invRes.json();
         setInventory(invData.inventory || []);
       } else {
-        alert("Failed to update inventory.");
+        toast.error("Failed to update inventory.");
       }
     } catch (error) {
-      alert("Error updating inventory.");
+      toast.error("Error updating inventory.");
       console.error(error);
     }
   }
@@ -1289,7 +1292,7 @@ export default function EnterTestResult() {
     <div
       className="flex h-screen flex-col bg-gray-50 font-sans"
       style={{
-        "--brand-color": "#008080",
+        "--brand-color": "#649ccd",
         "--background-color": "#f7f9fc",
         "--surface-color": "#ffffff",
         "--text-primary": "#111518",
@@ -1342,7 +1345,7 @@ export default function EnterTestResult() {
         )}
 
         {/* Main content */}
-        <main className="flex-grow bg-[#f0f4f7] overflow-auto p-6">
+        <main className="flex-grow bg-[#f0f5fa] overflow-auto p-6">
           <header className="flex items-center justify-between mb-8">
             <button
               className="md:hidden p-2 -ml-2 text-[var(--text-primary)]"
@@ -1511,7 +1514,7 @@ export default function EnterTestResult() {
                                 onClick={async () => {
                                   try {
                                     const res = await fetch(
-                                      `http://localhost:5000/patients/${patientId}/tests/${testId}/${openTestFormId}/results`,
+                                      `${BACKEND_URL}/patients/${patientId}/tests/${testId}/${openTestFormId}/results`,
                                       {
                                         method: "PUT",
                                         headers: {
@@ -1525,16 +1528,16 @@ export default function EnterTestResult() {
                                       }
                                     );
                                     if (res.ok) {
-                                      alert("Results saved successfully.");
+                                      toast.success("Results saved!");
 
-                                      const updatedResults = await fetch(`http://localhost:5000/patients/${patientId}/packages/${testId}/${selectedDate}/results`);
+                                      const updatedResults = await fetch(`${BACKEND_URL}/patients/${patientId}/packages/${testId}/${selectedDate}/results`);
                                       const updatedData = await updatedResults.json();
                                       setPackageTestsResults(updatedData.testsResults);
                                     } else {
-                                      alert("Failed to save results.");
+                                      toast.error("Failed to save results.");
                                     }
                                   } catch {
-                                    alert("Error saving results.");
+                                    toast.error("Error saving results.");
                                   }
                                 }}
                                 className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
@@ -1646,7 +1649,7 @@ export default function EnterTestResult() {
                           onClick={async () => {
                             try {
                               const res = await fetch(
-                                `http://localhost:5000/patients/${patientId}/tests/${testId}/results`,
+                                `${BACKEND_URL}/patients/${patientId}/tests/${testId}/results`,
                                 {
                                   method: "PUT",
                                   headers: {
@@ -1659,10 +1662,10 @@ export default function EnterTestResult() {
                                   }),
                                 }
                               );
-                              if (res.ok) alert("Results saved successfully.");
-                              else alert("Failed to save results.");
+                              if (res.ok) toast.success("Results saved successfully.");
+                              else toast.error("Failed to save results.");
                             } catch {
-                              alert("Error saving results.");
+                              toast.error("Error saving results.");
                             }
                           }}
                           className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
@@ -1836,7 +1839,7 @@ export default function EnterTestResult() {
                         className="px-4 py-2 rounded bg-green-600 text-white"
                         onClick={() => {
                           if (!testGroupFromState?.paymentInfo?.cleared) {
-                            alert("Payment not cleared yet.");
+                            toast.error("Please clear the payment first.");
                             return;
                           }
                           generatePDFWithAutoTable(

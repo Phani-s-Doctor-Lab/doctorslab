@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
+import { toast } from 'react-toastify';
 
 const TIME_FILTERS = [
   { label: "Last 1 Day", value: "1d" },
@@ -48,10 +49,12 @@ const Dashboard = () => {
   const userName =
     localStorage.getItem("userName") || sessionStorage.getItem("userName") || "";
 
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-      const patientsResp = await fetch("http://localhost:5000/patients");
+      const patientsResp = await fetch(`${BACKEND_URL}/patients`);
       const patientsData = await patientsResp.json();
       const patientsList = patientsData.patients || patientsData || [];
 
@@ -70,16 +73,16 @@ const Dashboard = () => {
       );
 
       const currPatientsResp = await fetch(
-        "http://localhost:5000/patientsData?period=current"
+        `${BACKEND_URL}/patientsData?period=current`
       );
       const prevPatientsResp = await fetch(
-        "http://localhost:5000/patientsData?period=previous"
+        `${BACKEND_URL}/patientsData?period=previous`
       );
       const currentPatientsData = await currPatientsResp.json();
       const previousPatientsData = await prevPatientsResp.json();
 
-      const currCostsResp = await fetch("http://localhost:5000/inventoryCosts?period=current");
-      const prevCostsResp = await fetch("http://localhost:5000/inventoryCosts?period=previous");
+      const currCostsResp = await fetch(`${BACKEND_URL}/inventoryCosts?period=current`);
+      const prevCostsResp = await fetch(`${BACKEND_URL}/inventoryCosts?period=previous`);
       const currentCostsData = await currCostsResp.json();
       const previousCostsData = await prevCostsResp.json();
 
@@ -118,7 +121,7 @@ const Dashboard = () => {
 
       let costs = 0;
       try {
-        const inventoryResp = await fetch("http://localhost:5000/inventory");
+        const inventoryResp = await fetch(`${BACKEND_URL}/inventory`);
         const inventoryData = await inventoryResp.json();
 
         costs += (inventoryData.inventory || []).reduce((sum, item) => {
@@ -126,7 +129,7 @@ const Dashboard = () => {
         }, 0);
 
         // Fetch other expenses and sum their amounts
-        const otherExpensesResp = await fetch("http://localhost:5000/otherExpenses");
+        const otherExpensesResp = await fetch(`${BACKEND_URL}/otherExpenses`);
         const otherExpensesData = await otherExpensesResp.json();
 
         if (otherExpensesData.expenses) {
@@ -189,11 +192,11 @@ const Dashboard = () => {
     <div
       className="relative flex min-h-screen bg-[var(--background-color)]"
       style={{
-        "--primary-color": "#008080",
+        "--primary-color": "#649ccd",
         "--primary-light": "#e0f2f1",
         "--text-primary": "#111827",
         "--text-secondary": "#6b7280",
-        "--background-color": "#f8f9fa",
+        "--background-color": "#d1e1f0",
         "--border-color": "#D3D3D3",
         fontFamily: "'Public Sans', sans-serif",
       }}
@@ -216,7 +219,7 @@ const Dashboard = () => {
       )}
 
       {/* Main content */}
-      <main className="flex-grow bg-[#f0f4f7] overflow-auto p-6" aria-label="Main content area">
+      <main className="flex-grow bg-[#f0f5fa] overflow-auto p-6" aria-label="Main content area">
         <header className="flex items-center justify-between mb-8">
           <button
             className="md:hidden p-2 -ml-2 text-[var(--text-primary)]"

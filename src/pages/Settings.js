@@ -177,7 +177,7 @@
 //         </header>
 //         <div className="flex flex-grow overflow-hidden">
 //           <Sidebar />
-//           <main className="flex-1 bg-[#f0f4f7] px-4 py-8 sm:px-6 lg:px-8">
+//           <main className="flex-1 bg-[#f0f5fa] px-4 py-8 sm:px-6 lg:px-8">
 //             <div className="mx-auto max-w-7xl space-y-8">
 //               {/* Profile */}
 //               <section>
@@ -218,7 +218,7 @@
 //                     <h4 className="font-semibold text-[#1e293b] mb-4">Existing Signatures</h4>
 //                     <ul className="space-y-3">
 //                       {signatures.map(sig => (
-//                         <li key={sig.id} className="flex items-center justify-between p-3 rounded-md bg-[#f0f4f7] border border-[#e2e8f0]">
+//                         <li key={sig.id} className="flex items-center justify-between p-3 rounded-md bg-[#f0f5fa] border border-[#e2e8f0]">
 //                           <span className="text-sm font-medium text-[#64748b]">{sig.name}</span>
 //                           <button className="text-[#94a3b8] hover:text-red-500" onClick={() => handleDeleteSignature(sig.id)}>
 //                             <span className="material-symbols-outlined text-md">delete</span>
@@ -314,6 +314,7 @@
 
 import React, { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
+import { toast } from 'react-toastify';
 
 function SettingsPage() {
   // Sidebar state
@@ -362,18 +363,20 @@ function SettingsPage() {
   const userName =
     localStorage.getItem("userName") || sessionStorage.getItem("userName") || "";
 
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
   // Fetch profile + signatures on mount
   useEffect(() => {
     async function fetchData() {
       try {
         const userEmail = localStorage.getItem("userEmail") || sessionStorage.getItem("userEmail");
-        const resp = await fetch(`http://localhost:5000/users/${encodeURIComponent(userEmail)}`);
+        const resp = await fetch(`${BACKEND_URL}/users/${encodeURIComponent(userEmail)}`);
         if (resp.ok) {
           const data = await resp.json();
           setProfile({ email: data.email, name: data.name, username: data.username });
           setProfileEdit({ email: data.email, name: data.name, username: data.username });
         }
-        const res = await fetch("http://localhost:5000/signatures");
+        const res = await fetch(`${BACKEND_URL}/signatures`);
         const sigData = await res.json();
         setSignatures(sigData.signatures || []);
       } finally {
@@ -440,7 +443,7 @@ function SettingsPage() {
     setProfileMessage("");
     setProfileError("");
     try {
-      const res = await fetch("http://localhost:5000/update-profile", {
+      const res = await fetch(`${BACKEND_URL}/update-profile`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...profileEdit, email: profile.email }),
@@ -470,7 +473,7 @@ function SettingsPage() {
     if (!passwordForm.prev || !passwordForm.new || !passwordForm.confirm) return setPasswordError("All fields required.");
     if (passwordForm.new !== passwordForm.confirm) return setPasswordError("Passwords do not match.");
     try {
-      const resp = await fetch("http://localhost:5000/update-password", {
+      const resp = await fetch(`${BACKEND_URL}/update-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ previousPassword: passwordForm.prev, newPassword: passwordForm.new, email: profile.email }),
@@ -488,7 +491,7 @@ function SettingsPage() {
   useEffect(() => {
     async function fetchData() {
       const userEmail = localStorage.getItem("userEmail") || sessionStorage.getItem("userEmail");
-      const resp = await fetch(`http://localhost:5000/users/${encodeURIComponent(userEmail)}`);
+      const resp = await fetch(`${BACKEND_URL}/users/${encodeURIComponent(userEmail)}`);
       if (resp.ok) {
         const data = await resp.json();
         setProfile({ email: data.email, name: data.name, username: data.username });
@@ -496,7 +499,7 @@ function SettingsPage() {
       }
       setLoadingProfile(false);
 
-      const res = await fetch("http://localhost:5000/signatures");
+      const res = await fetch(`${BACKEND_URL}/signatures`);
       const data2 = await res.json();
       setSignatures(data2.signatures || []);
       setLoadingSignatures(false);
@@ -513,7 +516,7 @@ function SettingsPage() {
     setLoadingAddSignature(true);
     setSignatureMessage("");
     try {
-      const resp = await fetch("http://localhost:5000/signatures", {
+      const resp = await fetch(`${BACKEND_URL}/signatures`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newSignature }),
@@ -536,7 +539,7 @@ function SettingsPage() {
   const handleDeleteSignature = async (id) => {
     setLoading(true); // optional: show loading on deletion
     try {
-      const resp = await fetch(`http://localhost:5000/signatures/${id}`, {
+      const resp = await fetch(`${BACKEND_URL}/signatures/${id}`, {
         method: "DELETE",
       });
       if (!resp.ok) throw new Error("Delete failed");
@@ -573,7 +576,7 @@ function SettingsPage() {
       )}
 
       {/* Main content */}
-      <main className="flex-grow bg-[#f0f4f7] overflow-auto p-6">
+      <main className="flex-grow bg-[#f0f5fa] overflow-auto p-6">
 
         <header className="flex items-center justify-between mb-8">
               <button
@@ -644,7 +647,7 @@ function SettingsPage() {
                 <input name="email" className="w-full border p-2 rounded" value={profileEdit.email} onChange={handleProfileChange} />
                 <p className="w-full border p-2 rounded bg-gray-100">{profile.name}</p>
                 <div className="flex justify-between items-center">
-                  <button type="submit" className="px-4 py-2 bg-teal-600 text-white rounded">Save Changes</button>
+                  <button type="submit" className="px-4 py-2 bg-[#649ccd] text-white rounded">Save Changes</button>
                   <button type="button" onClick={() => setShowPasswordModal(true)} className="px-4 py-2 bg-gray-700 text-white rounded">Update Password</button>
                 </div>
                 {profileMessage && <p className="text-green-600">{profileMessage}</p>}
@@ -701,7 +704,7 @@ function SettingsPage() {
                   <button
                     type="submit"
                     disabled={loadingAddSignature}
-                    className="px-4 py-2 bg-teal-600 text-white rounded flex items-center justify-center"
+                    className="px-4 py-2 bg-[#649ccd] text-white rounded flex items-center justify-center"
                   >
                     {loadingAddSignature ? (
                       <svg
@@ -754,7 +757,7 @@ function SettingsPage() {
                 ))}
                 {passwordError && <p className="text-red-600">{passwordError}</p>}
                 {passwordSuccess && <p className="text-green-600">{passwordSuccess}</p>}
-                <button type="submit" disabled={loadingPassword} className="w-full py-2 bg-teal-600 text-white rounded">
+                <button type="submit" disabled={loadingPassword} className="w-full py-2 bg-[#649ccd] text-white rounded">
                   {loadingPassword ? "Updating..." : "Update Password"}
                 </button>
               </form>
