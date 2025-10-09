@@ -975,7 +975,7 @@ export default function EnterTestResult() {
 
         // Prepare table data for this test
         const tableHeaders = [
-          "Parameter",
+          "Investigation",
           "Result",
           "Reference Range(s)",
           "Unit",
@@ -1166,7 +1166,7 @@ export default function EnterTestResult() {
     } else {
       // prepare table
       const tableHeaders = [
-        "Parameter",
+        "Investigation",
         "Result",
         "Reference Range(s)",
         "Unit",
