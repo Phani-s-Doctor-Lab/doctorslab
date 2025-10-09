@@ -646,118 +646,118 @@ const LETTERHEAD_URL = "/images/DOCTORS LAB LETTER HEAD - Copy.png"; // Update a
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
-function ReagentUsageForm({ inventory, usageList, setUsageList }) {
-  const [filters, setFilters] = useState(usageList.map(() => ""));
+// function ReagentUsageForm({ inventory, usageList, setUsageList }) {
+//   const [filters, setFilters] = useState(usageList.map(() => ""));
 
-  const addUsageRow = () => {
-    setUsageList([...usageList, { itemId: "", quantity: "" }]);
-    setFilters([...filters, ""]);
-  };
+//   const addUsageRow = () => {
+//     setUsageList([...usageList, { itemId: "", quantity: "" }]);
+//     setFilters([...filters, ""]);
+//   };
 
-  const removeUsageRow = (index) => {
-    setUsageList(usageList.filter((_, i) => i !== index));
-    setFilters(filters.filter((_, i) => i !== index));
-  };
+//   const removeUsageRow = (index) => {
+//     setUsageList(usageList.filter((_, i) => i !== index));
+//     setFilters(filters.filter((_, i) => i !== index));
+//   };
 
-  const handleItemChange = (index, itemId) => {
-    const newUsage = [...usageList];
-    newUsage[index].itemId = itemId;
-    if (!newUsage[index].quantity) newUsage[index].quantity = "";
-    setUsageList(newUsage);
-  };
+//   const handleItemChange = (index, itemId) => {
+//     const newUsage = [...usageList];
+//     newUsage[index].itemId = itemId;
+//     if (!newUsage[index].quantity) newUsage[index].quantity = "";
+//     setUsageList(newUsage);
+//   };
 
-  const handleQuantityChange = (index, value) => {
-    if (value === "" || /^[0-9]*$/.test(value)) {
-      const newUsage = [...usageList];
-      newUsage[index].quantity = value;
-      setUsageList(newUsage);
-    }
-  };
+//   const handleQuantityChange = (index, value) => {
+//     if (value === "" || /^[0-9]*$/.test(value)) {
+//       const newUsage = [...usageList];
+//       newUsage[index].quantity = value;
+//       setUsageList(newUsage);
+//     }
+//   };
 
-  const handleFilterChange = (index, value) => {
-    const newFilters = [...filters];
-    newFilters[index] = value;
-    setFilters(newFilters);
-  };
+//   const handleFilterChange = (index, value) => {
+//     const newFilters = [...filters];
+//     newFilters[index] = value;
+//     setFilters(newFilters);
+//   };
 
-  return (
-    <div className="space-y-4">
-      {usageList.map((usage, idx) => {
-        const lowerFilter = filters[idx]?.toLowerCase() || "";
-        const filteredInventory = inventory.filter(
-          (item) =>
-            item.item.toLowerCase().includes(lowerFilter) &&
-            usageList.every((u, i) => i === idx || u.itemId !== item.id)
-        );
+//   return (
+//     <div className="space-y-4">
+//       {usageList.map((usage, idx) => {
+//         const lowerFilter = filters[idx]?.toLowerCase() || "";
+//         const filteredInventory = inventory.filter(
+//           (item) =>
+//             item.item.toLowerCase().includes(lowerFilter) &&
+//             usageList.every((u, i) => i === idx || u.itemId !== item.id)
+//         );
 
-        const selectedItem = inventory.find((inv) => inv.id === usage.itemId);
-        if (selectedItem && !filteredInventory.includes(selectedItem)) {
-          filteredInventory.unshift(selectedItem);
-        }
+//         const selectedItem = inventory.find((inv) => inv.id === usage.itemId);
+//         if (selectedItem && !filteredInventory.includes(selectedItem)) {
+//           filteredInventory.unshift(selectedItem);
+//         }
 
-        return (
-          <div
-            key={idx}
-            className="grid grid-cols-12 gap-2 items-center bg-white p-3 rounded shadow"
-          >
-            <div className="col-span-5">
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded px-3 py-2"
-                placeholder="Search reagent"
-                value={filters[idx] || ""}
-                list={`inventory-list-${idx}`}
-                onChange={(e) => handleFilterChange(idx, e.target.value)}
-                onBlur={(e) => {
-                  const val = e.target.value.trim();
-                  const found = inventory.find((i) => i.item === val);
-                  if (found) handleItemChange(idx, found.id);
-                }}
-              />
-              <datalist id={`inventory-list-${idx}`}>
-                {filteredInventory.map((item) => (
-                  <option key={item.id} value={item.item} />
-                ))}
-              </datalist>
-            </div>
-            <div className="col-span-3">
-              <input
-                type="text"
-                placeholder="Quantity"
-                value={usage.quantity}
-                className="w-full border border-gray-300 rounded px-3 py-2"
-                disabled={!usage.itemId}
-                onChange={(e) => handleQuantityChange(idx, e.target.value)}
-              />
-            </div>
-            <div className="md:col-span-3 col-span-1"></div>
-            <div className="col-span-1 flex space-x-1">
-              {usageList.length > 1 && (
-                <button
-                  className="text-red-600 bg-red-100 rounded px-2"
-                  onClick={() => removeUsageRow(idx)}
-                  title="Remove"
-                >
-                  ×
-                </button>
-              )}
-              {idx === usageList.length - 1 && (
-                <button
-                  className="text-blue-600 bg-blue-100 rounded px-2"
-                  onClick={addUsageRow}
-                  disabled={!usage.itemId || !usage.quantity}
-                  title="Add"
-                >
-                  +
-                </button>
-              )}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
+//         return (
+//           <div
+//             key={idx}
+//             className="grid grid-cols-12 gap-2 items-center bg-white p-3 rounded shadow"
+//           >
+//             <div className="col-span-5">
+//               <input
+//                 type="text"
+//                 className="w-full border border-gray-300 rounded px-3 py-2"
+//                 placeholder="Search reagent"
+//                 value={filters[idx] || ""}
+//                 list={`inventory-list-${idx}`}
+//                 onChange={(e) => handleFilterChange(idx, e.target.value)}
+//                 onBlur={(e) => {
+//                   const val = e.target.value.trim();
+//                   const found = inventory.find((i) => i.item === val);
+//                   if (found) handleItemChange(idx, found.id);
+//                 }}
+//               />
+//               <datalist id={`inventory-list-${idx}`}>
+//                 {filteredInventory.map((item) => (
+//                   <option key={item.id} value={item.item} />
+//                 ))}
+//               </datalist>
+//             </div>
+//             <div className="col-span-3">
+//               <input
+//                 type="text"
+//                 placeholder="Quantity"
+//                 value={usage.quantity}
+//                 className="w-full border border-gray-300 rounded px-3 py-2"
+//                 disabled={!usage.itemId}
+//                 onChange={(e) => handleQuantityChange(idx, e.target.value)}
+//               />
+//             </div>
+//             <div className="md:col-span-3 col-span-1"></div>
+//             <div className="col-span-1 flex space-x-1">
+//               {usageList.length > 1 && (
+//                 <button
+//                   className="text-red-600 bg-red-100 rounded px-2"
+//                   onClick={() => removeUsageRow(idx)}
+//                   title="Remove"
+//                 >
+//                   ×
+//                 </button>
+//               )}
+//               {idx === usageList.length - 1 && (
+//                 <button
+//                   className="text-blue-600 bg-blue-100 rounded px-2"
+//                   onClick={addUsageRow}
+//                   disabled={!usage.itemId || !usage.quantity}
+//                   title="Add"
+//                 >
+//                   +
+//                 </button>
+//               )}
+//             </div>
+//           </div>
+//         );
+//       })}
+//     </div>
+//   );
+// }
 
 export default function EnterTestResult() {
   const { patientId, testId } = useParams();
@@ -784,6 +784,7 @@ export default function EnterTestResult() {
   const [selectedPackageTestId, setSelectedPackageTestId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [packageTestsResults, setPackageTestsResults] = useState([]);
+  const [refDoctor, setRefDoctor] = useState("");
   const passedState = location.state || {};
   const testGroupFromState = passedState.testGroupOnSelectedDate;
   const isPackage = passedState.isPackage;
@@ -873,6 +874,7 @@ export default function EnterTestResult() {
         setPatient(pData.patient);
         setTest(tData);
         setValues(rData.results || {});
+        setRefDoctor(rData.refDoctor || "");
         setInterpretation(rData.interpretation || "");
         setReportDate(rData.reportDate || new Date());
         setPackageTestsResults(prData?.testsResults || []);
@@ -966,6 +968,8 @@ export default function EnterTestResult() {
 
     if (isPackage) {
       const packageTests = test.tests || [];
+      console.log("test", test);
+      console.log("packageTests", packageTests);
       packageTests.forEach((pkgTest, index) => {
         if (index !== 0) doc.addPage(); // Add new page after first test
 
@@ -973,37 +977,87 @@ export default function EnterTestResult() {
         const tableHeaders = [
           "Parameter",
           "Result",
-          "Unit",
           "Reference Range(s)",
-          "Method",
+          "Unit",
         ];
         // Find results for this pkgTest from packageTestsResults if available
         const testResult = packageTestsResults.find((t) => t.id === pkgTest.id);
         console.log("testResult", testResult);
+        const refDoctor = testResult?.refDoctor || "";
         const testValues = testResult?.results || {};
         const testInterpretation = testResult?.interpretation || "";
 
         const tableData = pkgTest.parameters.map((param) => [
           param.name || "--",
           testValues[param.name] || "--",
-          param.unit || "--",
           param.referenceRanges?.length
             ? param.referenceRanges
                 .map((r) => `${r.group}: ${r.range}`)
                 .join("\n")
             : "--",
-          pkgTest.methodology || "--",
+            param.unit || "--",
         ]);
+
+        let headerStartX = null;
+        let headerStartY = null;
+        let headerEndX = null;
+        let headerEndY = null;
 
         // Draw table
         autoTable(doc, {
           head: [tableHeaders],
           body: tableData,
-          theme: "plain",
-          styles: { fontSize: 9, cellPadding: 3 },
-          headStyles: { lineWidth: 0 },
-          margin: { top: 95, left: marginX, right: marginX, bottom: 40 },
+          theme: "plain", // removes all lines
+          styles: {
+            halign: "center",
+            valign: "middle",
+            fontSize: 11,
+            cellPadding: 3,
+            textColor: [0, 0, 0],
+          },
+          headStyles: {
+            halign: "center",
+            valign: "middle",
+            fontStyle: "bold",
+            textColor: [0, 0, 0],
+            fillColor: false,
+          },
+          bodyStyles: {
+            textColor: [0, 0, 0],
+            fillColor: false,
+          },
+          margin: { top: 102, left: marginX, right: marginX, bottom: 40 },
           showHead: "everyPage",
+
+          didDrawCell: (data) => {
+            if (data.section === "head") {
+              const { x, y, width, height } = data.cell;
+
+              // Track bounding box for the whole header row
+              if (headerStartX === null || x < headerStartX) headerStartX = x;
+              if (headerStartY === null || y < headerStartY) headerStartY = y;
+              if (headerEndX === null || x + width > headerEndX)
+                headerEndX = x + width;
+              if (headerEndY === null || y + height > headerEndY)
+                headerEndY = y + height;
+            }
+          },
+
+          didDrawPage: () => {
+            if (headerStartX !== null) {
+              doc.setDrawColor(0);
+              doc.setLineWidth(0.2);
+              // Draw single outer rectangle around header
+              doc.rect(
+                headerStartX,
+                headerStartY,
+                headerEndX - headerStartX,
+                headerEndY - headerStartY
+              );
+              // Reset for next page
+              headerStartX = headerStartY = headerEndX = headerEndY = null;
+            }
+          },
 
           willDrawPage: () => {
             const group = patient.tests.find(
@@ -1033,31 +1087,33 @@ export default function EnterTestResult() {
 
             let cursorY = 60;
             doc.setTextColor(0, 0, 0);
-            doc.setFontSize(12);
+            doc.setFontSize(11);
 
             doc.text(`Patient Name: ${patient.name}`, marginX, cursorY);
             cursorY += lineSpacing;
             doc.text(
-              `Age/Sex: ${patient.age} / ${patient.gender}`,
+              `Age: ${patient.age}`,
               marginX,
               cursorY
             );
             doc.text(`ID: ${patient.patientId}`, margin2X, cursorY);
             cursorY += lineSpacing;
-            doc.text(`Address: ${patient.address}`, marginX, cursorY);
+            doc.text(`Sex: ${patient.gender}`, marginX, cursorY);
             doc.text(`Sample Type: ${pkgTest.specimenType}`, margin2X, cursorY);
             cursorY += lineSpacing;
-            doc.text(`Ref. By Doctor: ${patient.doctor}`, marginX, cursorY);
+            doc.text(`Address: ${patient.address}`, marginX, cursorY);
             doc.text(
               `Collection Date: ${collectionDateRaw}`,
               margin2X,
               cursorY
             );
             cursorY += lineSpacing;
+            doc.text(`Ref. By Doctor: Dr. ${refDoctor}`, marginX, cursorY);
             doc.text(`Report Date: ${reportDate}`, margin2X, cursorY);
             cursorY += lineSpacing * 2;
             doc.setFont("helvetica", "bold");
-            doc.text(pkgTest.testName + " Report", pageWidth / 2, cursorY, {
+            doc.setFontSize(12);
+            doc.text(pkgTest.testName, pageWidth / 2, cursorY, {
               align: "center",
             });
           },
@@ -1081,7 +1137,7 @@ export default function EnterTestResult() {
         }
 
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(10);
+        doc.setFontSize(11);
         doc.text("Signature", pageWidth - marginX, finalY + 20, {
           align: "right",
         });
@@ -1112,30 +1168,79 @@ export default function EnterTestResult() {
       const tableHeaders = [
         "Parameter",
         "Result",
-        "Unit",
         "Reference Range(s)",
-        "Method",
+        "Unit",
       ];
       const tableData = test.parameters.map((param) => [
         param.name || "--",
         values[param.name] || "--",
-        param.unit || "--",
         param.referenceRanges?.length
           ? param.referenceRanges
               .map((r) => `${r.group}: ${r.range}`)
               .join("\n")
           : "--",
-        test.methodology || "--",
+          param.unit || "--",
       ]);
+
+      let headerStartX = null;
+      let headerStartY = null;
+      let headerEndX = null;
+      let headerEndY = null;
 
       autoTable(doc, {
         head: [tableHeaders],
         body: tableData,
-        theme: "plain",
-        styles: { fontSize: 9, cellPadding: 3 },
-        headStyles: { lineWidth: 0 },
-        margin: { top: 95, left: marginX, right: marginX, bottom: 40 },
+        theme: "plain", // removes all lines
+        styles: {
+          halign: "center",
+          valign: "middle",
+          fontSize: 11,
+          cellPadding: 3,
+          textColor: [0, 0, 0],
+        },
+        headStyles: {
+          halign: "center",
+          valign: "middle",
+          fontStyle: "bold",
+          textColor: [0, 0, 0],
+          fillColor: false,
+        },
+        bodyStyles: {
+          textColor: [0, 0, 0],
+          fillColor: false,
+        },
+        margin: { top: 102, left: marginX, right: marginX, bottom: 40 },
         showHead: "everyPage",
+
+        didDrawCell: (data) => {
+          if (data.section === "head") {
+            const { x, y, width, height } = data.cell;
+
+            // Track bounding box for the whole header row
+            if (headerStartX === null || x < headerStartX) headerStartX = x;
+            if (headerStartY === null || y < headerStartY) headerStartY = y;
+            if (headerEndX === null || x + width > headerEndX)
+              headerEndX = x + width;
+            if (headerEndY === null || y + height > headerEndY)
+              headerEndY = y + height;
+          }
+        },
+
+        didDrawPage: () => {
+          if (headerStartX !== null) {
+            doc.setDrawColor(0);
+            doc.setLineWidth(0.2);
+            // Draw single outer rectangle around header
+            doc.rect(
+              headerStartX,
+              headerStartY,
+              headerEndX - headerStartX,
+              headerEndY - headerStartY
+            );
+            // Reset for next page
+            headerStartX = headerStartY = headerEndX = headerEndY = null;
+          }
+        },
 
         willDrawPage: () => {
           if (includeLetterhead && LETTERHEAD_URL) {
@@ -1153,21 +1258,20 @@ export default function EnterTestResult() {
 
           let cursorY = 60;
           doc.setTextColor(0, 0, 0);
-          doc.setFontSize(12);
+          doc.setFontSize(11);
 
           doc.text(`Patient Name: ${patient.name}`, marginX, cursorY);
           cursorY += lineSpacing;
           doc.text(
-            `Age/Sex: ${patient.age} / ${patient.gender}`,
+            `Age: ${patient.age}`,
             marginX,
             cursorY
           );
           doc.text(`ID: ${patient.patientId}`, margin2X, cursorY);
           cursorY += lineSpacing;
-          doc.text(`Address: ${patient.address}`, marginX, cursorY);
+          doc.text(`Sex: ${patient.gender}`, marginX, cursorY);
           doc.text(`Sample Type: ${test.specimenType}`, margin2X, cursorY);
           cursorY += lineSpacing;
-          doc.text(`Ref. By Doctor: ${patient.doctor}`, marginX, cursorY);
 
           const group = patient.tests.find(
             (g) => g.requestDate === selectedDate
@@ -1175,20 +1279,25 @@ export default function EnterTestResult() {
           const collectionDateRaw = group
             ? group.collectionDate.split("T")
             : null;
-
+            
           // Report Date from test (assuming test.reportDate is stored)
           const testInGroup = group.testItems.find((t) => t.id === test.id);
+          const refDoctor = testInGroup ? testInGroup.refDoctor : null;
           const reportDateRaw = testInGroup ? testInGroup.reportDate : null;
           const reportDate = reportDateRaw
             ? formatDateSimple(reportDateRaw)
             : "N/A";
 
+          doc.text(`Address: ${patient.address}`, marginX, cursorY);
+
           doc.text(`Collection Date: ${collectionDateRaw}`, margin2X, cursorY);
           cursorY += lineSpacing;
+          doc.text(`Ref. By Doctor: Dr. ${refDoctor}`, marginX, cursorY);
           doc.text(`Report Date: ${reportDate}`, margin2X, cursorY);
           cursorY += lineSpacing * 2;
           doc.setFont("helvetica", "bold");
-          doc.text(test.testName + " Report", pageWidth / 2, cursorY, {
+          doc.setFontSize(12);
+          doc.text(test.testName, pageWidth / 2, cursorY, {
             align: "center",
           });
         },
@@ -1212,7 +1321,7 @@ export default function EnterTestResult() {
       }
 
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
+      doc.setFontSize(11);
       doc.text("Signature", pageWidth - marginX, finalY + 20, {
         align: "right",
       });
@@ -1248,45 +1357,45 @@ export default function EnterTestResult() {
     }
   };
 
-  async function saveUsedReagents() {
-    const filteredUsage = usageList.filter((u) => u.itemId && u.quantity);
-    if (filteredUsage.length === 0) {
-      toast.error("Please enter at least one usage.");
-      return;
-    }
-    // Validate quantities do not exceed available stock
-    for (const usage of filteredUsage) {
-      const invItem = inventory.find((i) => i.id === usage.itemId);
-      const available = invItem
-        ? invItem.batches.reduce((a, b) => a + Number(b.quantity || 0), 0)
-        : 0;
-      if (Number(usage.quantity) > available) {
-        toast.error(`Usage for ${invItem.item} exceeds available stock.`);
-        return;
-      }
-    }
-    // Proceed to API call (similar to your saveInventory function)
-    try {
-      const res = await fetch(`${BACKEND_URL}/inventory/deduct-usage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ usage: filteredUsage, testId, patientId }),
-      });
-      if (res.ok) {
-        toast.success("Inventory updated successfully.");
-        setUsageList([{ itemId: "", quantity: "" }]);
-        // refetch inventory to update UI
-        const invRes = await fetch(`${BACKEND_URL}/inventory`);
-        const invData = await invRes.json();
-        setInventory(invData.inventory || []);
-      } else {
-        toast.error("Failed to update inventory.");
-      }
-    } catch (error) {
-      toast.error("Error updating inventory.");
-      console.error(error);
-    }
-  }
+  // async function saveUsedReagents() {
+  //   const filteredUsage = usageList.filter((u) => u.itemId && u.quantity);
+  //   if (filteredUsage.length === 0) {
+  //     toast.error("Please enter at least one usage.");
+  //     return;
+  //   }
+  //   // Validate quantities do not exceed available stock
+  //   for (const usage of filteredUsage) {
+  //     const invItem = inventory.find((i) => i.id === usage.itemId);
+  //     const available = invItem
+  //       ? invItem.batches.reduce((a, b) => a + Number(b.quantity || 0), 0)
+  //       : 0;
+  //     if (Number(usage.quantity) > available) {
+  //       toast.error(`Usage for ${invItem.item} exceeds available stock.`);
+  //       return;
+  //     }
+  //   }
+  //   // Proceed to API call (similar to your saveInventory function)
+  //   try {
+  //     const res = await fetch(`${BACKEND_URL}/inventory/deduct-usage`, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ usage: filteredUsage, testId, patientId }),
+  //     });
+  //     if (res.ok) {
+  //       toast.success("Inventory updated successfully.");
+  //       setUsageList([{ itemId: "", quantity: "" }]);
+  //       // refetch inventory to update UI
+  //       const invRes = await fetch(`${BACKEND_URL}/inventory`);
+  //       const invData = await invRes.json();
+  //       setInventory(invData.inventory || []);
+  //     } else {
+  //       toast.error("Failed to update inventory.");
+  //     }
+  //   } catch (error) {
+  //     toast.error("Error updating inventory.");
+  //     console.error(error);
+  //   }
+  // }
 
   return (
     <div
@@ -1423,7 +1532,7 @@ export default function EnterTestResult() {
                       <strong>Patient ID:</strong> {patient.patientId}
                     </div>
                     <div>
-                      <strong>Ref. By Doctor:</strong> {patient.doctor}
+                      <strong>Ref. By Doctor:</strong> {packageTestsResults[0]?.refDoctor}
                     </div>
                     <div>
                       <strong>Contact:</strong> {patient.contact}
@@ -1529,10 +1638,7 @@ export default function EnterTestResult() {
                                     );
                                     if (res.ok) {
                                       toast.success("Results saved!");
-
-                                      const updatedResults = await fetch(`${BACKEND_URL}/patients/${patientId}/packages/${testId}/${selectedDate}/results`);
-                                      const updatedData = await updatedResults.json();
-                                      setPackageTestsResults(updatedData.testsResults);
+                                      window.location.reload();
                                     } else {
                                       toast.error("Failed to save results.");
                                     }
@@ -1546,7 +1652,7 @@ export default function EnterTestResult() {
                               </button>
                             </div>
                           </form>
-                          <div className="max-w-4xl mx-auto bg-white rounded shadow p-6 mt-8">
+                          {/* <div className="max-w-4xl mx-auto bg-white rounded shadow p-6 mt-8">
                             <h2 className="text-2xl font-semibold mb-4">
                               Record Reagent Usage
                             </h2>
@@ -1561,7 +1667,7 @@ export default function EnterTestResult() {
                             >
                               Save Usage
                             </button>
-                          </div>
+                          </div> */}
                         </>
                       )}
                     </div>
@@ -1584,7 +1690,7 @@ export default function EnterTestResult() {
                         <strong>Patient ID:</strong> {patient.patientId}
                       </div>
                       <div>
-                        <strong>Doctor:</strong> {patient.doctor}
+                        <strong>Doctor:</strong> {refDoctor}
                       </div>
                       <div>
                         <strong>Contact:</strong> {patient.contact}
@@ -1662,7 +1768,7 @@ export default function EnterTestResult() {
                                   }),
                                 }
                               );
-                              if (res.ok) toast.success("Results saved successfully.");
+                              if (res.ok) { toast.success("Results saved successfully."); window.location.reload(); }
                               else toast.error("Failed to save results.");
                             } catch {
                               toast.error("Error saving results.");
@@ -1677,7 +1783,7 @@ export default function EnterTestResult() {
                   </div>
 
                   {/* Reagent Usage */}
-                  <div className="max-w-4xl mx-auto bg-white rounded shadow p-6 mt-8">
+                  {/* <div className="max-w-4xl mx-auto bg-white rounded shadow p-6 mt-8">
                     <h2 className="text-2xl font-semibold mb-4">
                       Record Reagent Usage
                     </h2>
@@ -1692,7 +1798,7 @@ export default function EnterTestResult() {
                     >
                       Save Usage
                     </button>
-                  </div>
+                  </div> */}
                 </>
               )}
 

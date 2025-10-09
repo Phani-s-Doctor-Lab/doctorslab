@@ -88,26 +88,30 @@ export default function Sidebar() {
               <span>Patients</span>
             </p>
             {/* Add Test */}
-            {location.pathname === "/patient-form" && (
-              <p className="sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active">
-                <svg
-                  data-icon="Add"
-                  viewBox="0 0 52 52"
-                  fill="currentColor"
-                  className="w-6 h-6"
-                >
-                  <path
-                    d="M43,9C33.6-0.3,18.4-0.3,9,9c-9.3,9.4-9.3,24.6,0,34c9.4,9.4,24.6,9.4,33.9,0C52.3,33.6,52.3,18.4,43,9z
-                          M42,28c0,0.6-0.4,1-1,1H30c-0.5,0-1,0.5-1,1v11c0,0.5-0.5,1-1,1h-4c-0.6,0-1-0.4-1-1V30c0-0.6-0.4-1-1-1H11c-0.6,0-1-0.4-1-1v-4
-                          c0-0.5,0.5-1,1-1h11c0.6,0,1-0.4,1-1V11c0-0.5,0.5-1,1-1h4c0.5,0,1,0.4,1,1v11c0,0.6,0.4,1,1,1h11c0.5,0,1,0.5,1,1V28z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <span>Add Patient</span>
-              </p>
-            )}
+            <p className={`sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer ${
+                location.pathname === "/patient-form"
+                  ? "bg-[var(--primary-light)] text-[var(--primary-color)] font-medium active"
+                  : ""
+              }`}
+              onClick={() => navigate("/patient-form")}
+              >
+              <svg
+                data-icon="Add"
+                viewBox="0 0 52 52"
+                fill="currentColor"
+                className="w-6 h-6"
+              >
+                <path
+                  d="M43,9C33.6-0.3,18.4-0.3,9,9c-9.3,9.4-9.3,24.6,0,34c9.4,9.4,24.6,9.4,33.9,0C52.3,33.6,52.3,18.4,43,9z
+                        M42,28c0,0.6-0.4,1-1,1H30c-0.5,0-1,0.5-1,1v11c0,0.5-0.5,1-1,1h-4c-0.6,0-1-0.4-1-1V30c0-0.6-0.4-1-1-1H11c-0.6,0-1-0.4-1-1v-4
+                        c0-0.5,0.5-1,1-1h11c0.6,0,1-0.4,1-1V11c0-0.5,0.5-1,1-1h4c0.5,0,1,0.4,1,1v11c0,0.6,0.4,1,1,1h11c0.5,0,1,0.5,1,1V28z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <span>Add Patient</span>
+            </p>
             <p
               className={`sidebar-link flex items-center gap-3 px-3 py-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] transition-colors duration-200 cursor-pointer  ${
                 location.pathname === "/inventory"

@@ -392,9 +392,19 @@ const Dashboard = () => {
                   ))}
                 </select>
                 <button
-                  className="inline-flex items-center justify-center rounded-md h-10 px-4 text-xs font-bold bg-[var(--primary-color)] text-white hover:bg-teal-900 transition-colors shadow-md"
+                  className="inline-flex items-center justify-center rounded-md h-12 px-6 text-base font-bold bg-[var(--primary-color)] text-white shadow-lg hover:shadow-2xl hover:scale-[1.05] transition-transform duration-300 ease-in-out animate-pulse"
                   onClick={() => navigate("/patient-form")}
+                  style={{ animationDuration: '2.5s', backgroundColor: '#356a9a' }}
                 >
+                  <svg
+                    className="w-5 h-5 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
                   Add Case
                 </button>
               </div>

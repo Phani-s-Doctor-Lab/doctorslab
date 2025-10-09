@@ -56,6 +56,20 @@ const PatientTestManager = () => {
   const [paymentMode, setPaymentMode] = useState("Cash");
   const [currentPaymentDate, setCurrentPaymentDate] = useState(null);
 
+  const [doctorOptions, setDoctorOptions] = useState([]);
+  const [selectedDoctor, setSelectedDoctor] = useState("");
+  const [doctorSearchInput, setDoctorSearchInput] = useState("");
+  const [isLoadingDoctors, setIsLoadingDoctors] = useState(false);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({
+    name: "",
+    age: "",
+    gender: "",
+    contact: "",
+    address: "",
+  });
+
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -80,6 +94,13 @@ const PatientTestManager = () => {
       const data = await resp.json();
       if (resp.ok && data.patient) {
         setPatient(data.patient);
+        setEditData({
+          name: patient.name,
+          age: patient.age,
+          gender: patient.gender,
+          contact: patient.contact,
+          address: patient.address,
+        });
         const dates = (data.patient.tests || [])
           .map((g) => g.requestedDate || g.requestDate)
           .filter(Boolean)
@@ -96,6 +117,17 @@ const PatientTestManager = () => {
       setPatient(null);
     }
     setLoading(false);
+  };
+
+  useEffect(() => {
+    fetch(`${BACKEND_URL}/doctors`)
+      .then(res => res.json())
+      .then(data => setDoctorOptions(data.doctors || []));
+  }, []);
+
+  const onDoctorInputChange = (val) => {
+    setDoctorSearchInput(val);
+    setSelectedDoctor(val);
   };
 
   // Calendar: Get all unique test-requested dates for the patient
@@ -142,6 +174,53 @@ const PatientTestManager = () => {
 
   }, [selectedDate, patient]);
 
+  const handleChange = (e) => {
+    console.log(editData);
+    setEditData({
+      ...editData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleEditSave = async () => {
+    if (isEditing) {
+      // Save patient data to backend
+      const response = await fetch(`${BACKEND_URL}/patients/${patient.patientId}/edit`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editData),
+      });
+      if (response.ok) {
+        const updated = await response.json();
+        console.log(updated);
+        setPatient(updated.patient);
+      }
+      setIsEditing(false);
+    } else {
+      setIsEditing(true);
+    }
+  };
+
+  const handleDoctorBlurOrSelect = async () => {
+    if (
+      doctorOptions.some(d => d.name.trim().toLowerCase() === doctorSearchInput.trim().toLowerCase())
+    ) {
+      setSelectedDoctor(doctorSearchInput); // Picked existing
+    } else if (doctorSearchInput.trim() !== "") {
+      // Add new doctor to DB
+      const resp = await fetch(`${BACKEND_URL}/doctors`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: doctorSearchInput }),
+      });
+      if (resp.ok) {
+        const newDoc = await resp.json();
+        setDoctorOptions([...doctorOptions, { id: newDoc.doctor.id, name: newDoc.doctor.name }]);
+        setSelectedDoctor(doctorSearchInput);
+      }
+    }
+  };
+
   const testsOnSelectedDate = testGroupOnSelectedDate?.testItems || [];
   const discountOnSelectedDate = testGroupOnSelectedDate?.discount || 0;
   const totalBillOnSelectedDate =
@@ -149,6 +228,10 @@ const PatientTestManager = () => {
       (total, test) => total + test.price,
       0
     ) - discountOnSelectedDate;
+
+  const uniqueDoctors = Array.from(
+    new Set((testsOnSelectedDate).map(test => test.refDoctor).filter(Boolean))
+  ).map(name => `Dr. ${name}`).join(", ");
 
   // Handle test toggle in add test table
   const handleTestToggle = (test) => {
@@ -215,6 +298,7 @@ const PatientTestManager = () => {
           amount: Number(paymentAmount),
           mode: paymentMode,
         },
+        doctor: selectedDoctor,
         tests: [], // no new tests here, just payment
       };
       const resp = await fetch(
@@ -307,6 +391,7 @@ const PatientTestManager = () => {
           amount: Number(paymentAmount),
           mode: paymentMode,
         },
+        doctor: selectedDoctor,
         tests: selectedTests,
         discount: newTestsDiscount,
         date: getCurrentDate(),
@@ -527,7 +612,7 @@ const PatientTestManager = () => {
     doc.text(`Contact: ${patient.contact || "-"}`, 12, y);
     doc.text(`Address: ${patient.address || "-"}`, 140, y);
     y += 7;
-    doc.text(`Ref By: Dr. ${patient.doctor || "-"}`, 12, y);
+    doc.text(`Ref By: ${uniqueDoctors || "-"}`, 12, y);
 
     y += 8;
     doc.setFontSize(9.5);
@@ -732,7 +817,25 @@ const PatientTestManager = () => {
         {/* Content Area */}
         <div className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
           <div className="mx-auto rounded-lg bg-[var(--surface-color)] p-4 sm:p-6 shadow-lg text-left">
-            <h2 className="mb-6 text-2xl sm:text-3xl font-bold">Find Patient by Name</h2>
+            <div className="flex justify-between">
+              <h2 className="mb-6 text-2xl sm:text-3xl font-bold">Find Patient by Name</h2>
+              <button
+                  className="inline-flex items-center justify-center rounded-md h-12 px-6 text-base font-bold bg-[var(--primary-color)] text-white shadow-lg hover:shadow-2xl hover:scale-[1.05] transition-transform duration-300 ease-in-out animate-pulse"
+                  onClick={() => navigate("/patient-form")}
+                  style={{ animationDuration: '2.5s', backgroundColor: '#356a9a' }}
+                >
+                  <svg
+                    className="w-5 h-5 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add New Case
+                </button>
+            </div>
             <div className="mb-6 flex gap-4 relative">
               <input
                 type="text"
@@ -770,13 +873,56 @@ const PatientTestManager = () => {
                 <div>
                   <h3 className="text-lg font-bold mb-2">Patient Details</h3>
                   <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <div><span className="font-semibold">Name: </span> {patient.name}</div>
+                    <div>
+                      <span className="font-semibold">Name: </span> 
+                      {isEditing ? (
+                        <input className="form-input rounded-sm border-primary-200 px-4 py-2 text-sm bg-[#d1e1f0]" name="name" value={editData.name} onChange={handleChange} />
+                      ) : (
+                        <span>{patient.name}</span>
+                      )}
+                    </div>
                     <div><span className="font-semibold">Patient ID: </span> {patient.patientId || patient.id}</div>
-                    <div><span className="font-semibold">Age/Gender: </span> {patient.age} / {patient.gender}</div>
-                    <div><span className="font-semibold">Contact: </span> {patient.contact}</div>
-                    <div><span className="font-semibold">Address: </span> {patient.address}</div>
+                    <div>
+                      <span className="font-semibold">Age/Gender: </span> 
+                      {isEditing ? (
+                        <>
+                          <input className="form-input rounded-sm border-primary-200 px-4 py-2 text-sm bg-[#d1e1f0] w-20" name="age" value={editData.age} onChange={handleChange} /> 
+                          <span className="mx-2">/</span>
+                          <select className="form-input rounded-sm border-primary-200 px-4 py-2 text-sm bg-[#d1e1f0]" name="gender" value={editData.gender} onChange={handleChange}>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </>
+                      ) : (
+                        <span>{patient.age} / {patient.gender}</span>
+                      )}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Contact: </span>
+                      {isEditing ? (
+                        <input className="form-input rounded-sm border-primary-200 px-4 py-2 text-sm bg-[#d1e1f0]" name="contact" value={editData.contact} onChange={handleChange} />
+                      ) : (
+                        <span>{patient.contact}</span>
+                      )}
+                    </div>
+                    <div><span className="font-semibold">Address: </span> 
+                      {isEditing ? (
+                        <input className="form-input rounded-sm border-primary-200 px-4 py-2 text-sm bg-[#d1e1f0]" name="address" value={editData.address} onChange={handleChange} />
+                      ) : (
+                        <span>{patient.address}</span>
+                      )}
+                    </div>
                     <div><span className="font-semibold">Reg. Date/Time: </span> {patient.date} {patient.time}</div>
-                    <div><span className="font-semibold">Doctor: </span> {patient.doctor}</div>
+                    <div>
+                      <span className="font-semibold">Ref. By: </span>{" "}
+                      {testsOnSelectedDate && testsOnSelectedDate.length > 0 ? uniqueDoctors : "N/A"}
+                    </div>
+                    <div>
+                      <button className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded" onClick={handleEditSave} type="button">
+                        {isEditing ? "Save" : "Edit Patient"}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -1341,6 +1487,32 @@ const PatientTestManager = () => {
             {showPaymentModal && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4">
                 <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full max-h-full overflow-auto">
+                  <div className="mb-4">
+                    <label className="block mb-2 text-sm font-medium text-gray-700">Ref. Doctor:</label>
+                    <div className="relative">
+                      <input
+                        className="mt-1 block w-full rounded-md border p-2 sm:p-3 border-[var(--border-color)] shadow-sm focus:border-[var(--brand-color)] focus:ring-[var(--brand-color)] text-sm sm:text-base pr-8"
+                        id="doctor"
+                        placeholder="Select or enter referring doctor's name"
+                        value={doctorSearchInput}
+                        onChange={e => onDoctorInputChange(e.target.value)}
+                        list="doctor-list"
+                        onBlur={handleDoctorBlurOrSelect}
+                        required
+                        type="text"
+                      />
+                      {isLoadingDoctors && (
+                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 mt-0.5">
+                          <LoadingSpinner size="w-4 h-4" />
+                        </div>
+                      )}
+                    </div>
+                    <datalist id="doctor-list">
+                      {doctorOptions.map(doc => (
+                        <option key={doc.id} value={doc.name} />
+                      ))}
+                    </datalist>
+                  </div>
                   <h3 className="text-lg font-semibold mb-4">
                     Record Payment for {currentPaymentDate}
                   </h3>

@@ -419,7 +419,7 @@
 // }
 
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import { toast } from 'react-toastify';
@@ -449,10 +449,132 @@ const LoadingOverlay = ({ message = "Loading..." }) => (
   </div>
 );
 
+function ReagentUsageForm({ inventory, usageList, setUsageList }) {
+  const [filters, setFilters] = useState(usageList.map(() => ""));
+
+  const addUsageRow = () => {
+    setUsageList([...usageList, { itemId: "", itemName: "", quantity: "" }]);
+    setFilters([...filters, ""]);
+  };
+
+  const removeUsageRow = (index) => {
+    setUsageList(usageList.filter((_, i) => i !== index));
+    setFilters(filters.filter((_, i) => i !== index));
+  };
+
+  const handleItemChange = (index, itemId) => {
+    const newUsage = [...usageList];
+    const selectedItem = inventory.find(item => item.id === itemId);
+    newUsage[index] = {
+      ...newUsage[index],
+      itemId,
+      itemName: selectedItem ? selectedItem.item : "", // add itemName here
+    };
+    if (!newUsage[index].quantity) newUsage[index].quantity = "";
+    setUsageList(newUsage);
+  };
+
+  const handleQuantityChange = (index, value) => {
+    if (value === "" || /^[0-9]*$/.test(value)) {
+      const newUsage = [...usageList];
+      newUsage[index].quantity = value;
+      setUsageList(newUsage);
+    }
+  };
+
+  const handleFilterChange = (index, value) => {
+    const newFilters = [...filters];
+    newFilters[index] = value;
+    setFilters(newFilters);
+  };
+
+  return (
+    <div className="space-y-4">
+      {usageList.map((usage, idx) => {
+        const lowerFilter = filters[idx]?.toLowerCase() || "";
+        const filteredInventory = inventory.filter(
+          (item) =>
+            item.item.toLowerCase().includes(lowerFilter) &&
+            usageList.every((u, i) => i === idx || u.itemId !== item.id)
+        );
+
+        const selectedItem = inventory.find((inv) => inv.id === usage.itemId);
+        if (selectedItem && !filteredInventory.includes(selectedItem)) {
+          filteredInventory.unshift(selectedItem);
+        }
+
+        return (
+          <div
+            key={idx}
+            className="grid grid-cols-12 gap-2 items-center bg-white p-3 rounded shadow"
+          >
+            <div className="col-span-5">
+              <input
+                type="text"
+                className="w-full border border-gray-300 rounded px-3 py-2"
+                placeholder="Search reagent"
+                value={filters[idx] || ""}
+                list={`inventory-list-${idx}`}
+                onChange={(e) => handleFilterChange(idx, e.target.value)}
+                onBlur={(e) => {
+                  const val = e.target.value.trim();
+                  const found = inventory.find((i) => i.item === val);
+                  if (found) handleItemChange(idx, found.id);
+                }}
+              />
+              <datalist id={`inventory-list-${idx}`}>
+                {filteredInventory.map((item) => (
+                  <option key={item.id} value={item.item} />
+                ))}
+              </datalist>
+            </div>
+            <div className="col-span-3">
+              <input
+                type="text"
+                placeholder="Quantity"
+                value={usage.quantity}
+                className="w-full border border-gray-300 rounded px-3 py-2"
+                disabled={!usage.itemId}
+                onChange={(e) => handleQuantityChange(idx, e.target.value)}
+              />
+            </div>
+            <div className="md:col-span-3 col-span-1"></div>
+            <div className="col-span-1 flex space-x-1">
+              {usageList.length > 1 && (
+                <button
+                  className="text-red-600 bg-red-100 rounded px-2"
+                  onClick={() => removeUsageRow(idx)}
+                  title="Remove"
+                >
+                  ×
+                </button>
+              )}
+              {idx === usageList.length - 1 && (
+                <button
+                  className="text-blue-600 bg-blue-100 rounded px-2"
+                  onClick={addUsageRow}
+                  disabled={!usage.itemId || !usage.quantity}
+                  title="Add"
+                  type="button"
+                >
+                  +
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function AddTestPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const [inventory, setInventory] = useState([]);
+  const [usageList, setUsageList] = useState([{ itemId: "", itemName: "", quantity: "" }]);
 
   const isFromPatientForm = location.state?.fromPatientForm;
   const isFromPatientTestManager = location.state?.fromPatientTestManager;
@@ -521,6 +643,17 @@ export default function AddTestPage() {
     setParameters(updated);
   };
 
+  useEffect(() => {
+    async function fetchInventory() {
+      try {
+        const res = await fetch(`${BACKEND_URL}/inventory`);
+        const data = await res.json();
+        setInventory(data.inventory || []);
+      } catch {}
+    }
+    fetchInventory();
+  }, []);
+
   const handleDone = (newlyAddedTest) => {
     if (isFromPatientForm) {
       navigate("/patient-form", {
@@ -562,10 +695,29 @@ export default function AddTestPage() {
     e.preventDefault();
     setSaving(true);
 
+    const filteredUsage = usageList.filter((u) => u.itemId && u.quantity);
+    if (filteredUsage.length === 0) {
+      toast.error("Please enter at least one usage.");
+      return;
+    }
+
+    // Validate usage quantities do not exceed available stock
+    for (const usage of filteredUsage) {
+      const invItem = inventory.find((i) => i.id === usage.itemId);
+      const available = invItem
+        ? invItem.batches.reduce((a, b) => a + Number(b.quantity || 0), 0)
+        : 0;
+      if (Number(usage.quantity) > available) {
+        toast.error(`Usage for ${invItem.item} exceeds available stock.`);
+        return;
+      }
+    }
+
     const formattedTurnaround = formatTurnaroundTime(formData.turnaroundTime);
 
     const payload = {
       ...formData,
+      usageList: filteredUsage,
       price: Number(formData.price),
       turnaroundTime: formattedTurnaround,
       parameters,
@@ -992,6 +1144,17 @@ export default function AddTestPage() {
                       />
                     </div>
                   </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-4 sm:p-6 shadow-sm border border-[var(--border-color)]">
+                  <h2 className="text-2xl font-semibold mb-4">
+                    Record Reagents To Be Used For This Test
+                  </h2>
+                  <ReagentUsageForm
+                    inventory={inventory}
+                    usageList={usageList}
+                    setUsageList={setUsageList}
+                  />
                 </div>
 
                 {/* Buttons */}

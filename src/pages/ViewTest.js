@@ -138,6 +138,8 @@ export default function ViewTestPage() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const [usageList, setUsageList] = useState([{ itemId: "", quantity: "" }]);
+
   const userName =
     localStorage.getItem("userName") || sessionStorage.getItem("userName") || "";
 
@@ -150,6 +152,7 @@ export default function ViewTestPage() {
         const data = await resp.json();
         if (resp.ok) {
           setTest(data);
+          setUsageList(data.usageList || []);
         } else {
           toast.error(data.error || "Failed to fetch test.");
         }
@@ -324,6 +327,21 @@ export default function ViewTestPage() {
                   <p className="text-gray-700">No parameters defined.</p>
                 )}
               </div>
+
+              <div className="mt-8">
+              <h3 className="text-xl font-semibold mb-4">Reagent Quantities for this test</h3>
+              {usageList.length > 0 ? (
+                <ul className="list-disc ml-6">
+                  {usageList.map((usage, idx) => (
+                    <li key={idx}>
+                      {usage.itemName || usage.itemId}: {usage.quantity}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-700">No reagent usage recorded for this test.</p>
+              )}
+            </div>
 
               {/* Actions */}
               <div className="flex justify-end gap-4 mt-6">

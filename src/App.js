@@ -20,7 +20,32 @@ import SettingsPage from './pages/Settings';
 import ForgotPassword from './pages/ForgotPassword';
 
 import { ToastContainer } from 'react-toastify';
+import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+
+function ProtectedRoute({ children }) {
+  const userEmail =
+    localStorage.getItem("userEmail") || sessionStorage.getItem("userEmail");
+  const location = useLocation();
+
+  useEffect(() => {
+    if (!userEmail) {
+      toast.warn("Please log in to access this page.");
+    }
+  }, [userEmail]);
+
+  if (!userEmail) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: location.pathname }}
+      />
+    );
+  }
+
+  return children;
+}
 
 function AppRouter() {
   const navigate = useNavigate();
@@ -36,19 +61,19 @@ function AppRouter() {
     <Routes>
       <Route path="/" element={<PathologyLogin />} />
       <Route path='/login' element={<PathologyLogin />} />
-      <Route path='/dashboard' element={<Dashboard />} />
-      <Route path='/patient-form' element={<PatientTestForm />} />
-      <Route path='/patients' element={<PatientTestManager />} />
-      <Route path='/test-result/:patientId/:testId' element={<EnterTestResult />} />
-      <Route path='/inventory' element={<PathologyStockControl />} />
-      <Route path='/tests' element={<Tests />} />
-      <Route path='/add-test' element={<AddTestPage />} />
-      <Route path='/edit-test/:id' element={<EditTestPage />} />
-      <Route path='/view-test/:id' element={<ViewTestPage />} />
-      <Route path='/view-package/:id' element={<ViewPackagePage />} />
-      <Route path='/staff' element={<StaffManagementPage />} />
-      <Route path='/reports' element={<ReportsDashboard />} />
-      <Route path='/settings' element={<SettingsPage />} />
+      <Route path='/dashboard' element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path='/patient-form' element={<ProtectedRoute><PatientTestForm /></ProtectedRoute>} />
+      <Route path='/patients' element={<ProtectedRoute><PatientTestManager /></ProtectedRoute>} />
+      <Route path='/test-result/:patientId/:testId' element={<ProtectedRoute><EnterTestResult /></ProtectedRoute>} />
+      <Route path='/inventory' element={<ProtectedRoute><PathologyStockControl /></ProtectedRoute>} />
+      <Route path='/tests' element={<ProtectedRoute><Tests /></ProtectedRoute>} />
+      <Route path='/add-test' element={<ProtectedRoute><AddTestPage /></ProtectedRoute>} />
+      <Route path='/edit-test/:id' element={<ProtectedRoute><EditTestPage /></ProtectedRoute>} />
+      <Route path='/view-test/:id' element={<ProtectedRoute><ViewTestPage /></ProtectedRoute>} />
+      <Route path='/view-package/:id' element={<ProtectedRoute><ViewPackagePage /></ProtectedRoute>} />
+      <Route path='/staff' element={<ProtectedRoute><StaffManagementPage /></ProtectedRoute>} />
+      <Route path='/reports' element={<ProtectedRoute><ReportsDashboard /></ProtectedRoute>} />
+      <Route path='/settings' element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
       <Route path='/forgot-password' element={<ForgotPassword />} />
     </Routes>
   )
