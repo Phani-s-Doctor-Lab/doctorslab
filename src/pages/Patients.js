@@ -101,6 +101,7 @@ const PatientTestManager = () => {
           contact: patient.contact,
           address: patient.address,
         });
+        console.log("patient, editData", patient, editData);
         const dates = (data.patient.tests || [])
           .map((g) => g.requestedDate || g.requestDate)
           .filter(Boolean)
@@ -197,6 +198,7 @@ const PatientTestManager = () => {
       }
       setIsEditing(false);
     } else {
+      console.log("editData", editData);
       setIsEditing(true);
     }
   };
@@ -484,8 +486,24 @@ const PatientTestManager = () => {
             `${BACKEND_URL}/patients/${location.state.patientId}`
           );
           const data = await resp.json();
+          console.log("Rehydration data", data);
           if (data.patient) {
             setPatient(data.patient);
+            setEditData({
+              name: data.patient.name,
+              age: data.patient.age,
+              gender: data.patient.gender,
+              contact: data.patient.contact,
+              address: data.patient.address,
+            });
+
+            const dates = (data.patient.tests || [])
+              .map((g) => g.requestedDate || g.requestDate)
+              .filter(Boolean)
+              .sort((a, b) => new Date(b) - new Date(a));
+            setSelectedDate(dates[0] || null);
+            setSelectedTests([]);
+            setShowAddTests(false);
           } else {
             setPatient(null);
             toast.error("Could not find patient on rehydration");
@@ -876,7 +894,7 @@ const PatientTestManager = () => {
                     <div>
                       <span className="font-semibold">Name: </span> 
                       {isEditing ? (
-                        <input className="form-input rounded-sm border-primary-200 px-4 py-2 text-sm bg-[#d1e1f0]" name="name" value={editData.name} onChange={handleChange} />
+                        <input className="form-input rounded-sm border-primary-200 px-4 py-2 text-sm bg-[#d1e1f0]" name="name" value={editData.name} onChange={handleChange} required />
                       ) : (
                         <span>{patient.name}</span>
                       )}
@@ -886,9 +904,9 @@ const PatientTestManager = () => {
                       <span className="font-semibold">Age/Gender: </span> 
                       {isEditing ? (
                         <>
-                          <input className="form-input rounded-sm border-primary-200 px-4 py-2 text-sm bg-[#d1e1f0] w-20" name="age" value={editData.age} onChange={handleChange} /> 
+                          <input className="form-input rounded-sm border-primary-200 px-4 py-2 text-sm bg-[#d1e1f0] w-20" name="age" value={editData.age} onChange={handleChange} required /> 
                           <span className="mx-2">/</span>
-                          <select className="form-input rounded-sm border-primary-200 px-4 py-2 text-sm bg-[#d1e1f0]" name="gender" value={editData.gender} onChange={handleChange}>
+                          <select className="form-input rounded-sm border-primary-200 px-4 py-2 text-sm bg-[#d1e1f0]" name="gender" value={editData.gender} onChange={handleChange} required>
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
                             <option value="Other">Other</option>
@@ -901,14 +919,14 @@ const PatientTestManager = () => {
                     <div>
                       <span className="font-semibold">Contact: </span>
                       {isEditing ? (
-                        <input className="form-input rounded-sm border-primary-200 px-4 py-2 text-sm bg-[#d1e1f0]" name="contact" value={editData.contact} onChange={handleChange} />
+                        <input className="form-input rounded-sm border-primary-200 px-4 py-2 text-sm bg-[#d1e1f0]" name="contact" value={editData.contact} onChange={handleChange} required />
                       ) : (
                         <span>{patient.contact}</span>
                       )}
                     </div>
                     <div><span className="font-semibold">Address: </span> 
                       {isEditing ? (
-                        <input className="form-input rounded-sm border-primary-200 px-4 py-2 text-sm bg-[#d1e1f0]" name="address" value={editData.address} onChange={handleChange} />
+                        <input className="form-input rounded-sm border-primary-200 px-4 py-2 text-sm bg-[#d1e1f0]" name="address" value={editData.address} onChange={handleChange} required />
                       ) : (
                         <span>{patient.address}</span>
                       )}

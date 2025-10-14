@@ -637,10 +637,6 @@ export default function EditTestPage() {
     setSaving(true);
 
     const filteredUsage = usageList.filter((u) => u.itemId && u.quantity);
-    if (filteredUsage.length === 0) {
-      toast.error("Please enter at least one usage.");
-      return;
-    }
 
     // Validate usage quantities do not exceed available stock
     for (const usage of filteredUsage) {
